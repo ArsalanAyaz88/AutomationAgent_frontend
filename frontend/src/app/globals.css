@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --military-dark: #0a0e0f;
+  --military-green: #00ff41;
+  --military-orange: #ff8c00;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--military-dark);
+  color: var(--military-green);
+  font-family: 'Rajdhani', 'Courier New', monospace;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Military scan line effect */
+@keyframes scan-line {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(transparent, var(--military-green), transparent);
+  opacity: 0.3;
+  animation: scan-line 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0e0f;
+  border: 1px solid #00ff4120;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff4150;
+  border: 1px solid #00ff41;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff4180;
+}
+
+/* Grid pattern background */
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
