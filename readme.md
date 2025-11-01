@@ -1,5 +1,51 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+# YouTube Automation AI Agents - Frontend
+
+A military-themed command center interface for managing YouTube automation AI agents.
+
+## Backend Integration
+
+The frontend is integrated with the backend API deployed at:
+**https://automation-agent-backend.vercel.app/**
+
+### Available Agents & Endpoints
+
+1. **AGENT-001: Channel Auditor** - `POST /api/agent1/audit-channel`
+2. **AGENT-002: Title Auditor** - `POST /api/agent2/audit-titles`
+3. **AGENT-003: Script Writer** - `POST /api/agent3/generate-script`
+4. **AGENT-004: Scene Director** - `POST /api/agent4/script-to-prompts`
+5. **AGENT-005: Ideas Generator** - `POST /api/agent5/generate-ideas`
+6. **AGENT-006: Roadmap Strategist** - `POST /api/agent6/generate-roadmap`
+
+### API Configuration
+
+The app defaults to production: `https://automation-agent-backend.vercel.app`
+
+#### Switching Between Local and Production
+
+**For LOCAL Development:**
+1. Copy the example file:
+   ```bash
+   copy env.local.example .env.local
+   ```
+2. Edit `.env.local` and set:
+   ```bash
+   NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```
+3. Restart dev server: `npm run dev`
+
+**For PRODUCTION Backend:**
+1. Delete `.env.local` (uses default Vercel URL), OR
+2. Set in `.env.local`:
+   ```bash
+   NEXT_PUBLIC_API_URL=https://automation-agent-backend.vercel.app
+   ```
+
+**Quick Switch:**
+- Local: `echo NEXT_PUBLIC_API_URL=http://localhost:8000 > .env.local`
+- Production: `del .env.local` (Windows) or `rm .env.local` (Mac/Linux)
+
 ## Getting Started
 
 First, run the development server:

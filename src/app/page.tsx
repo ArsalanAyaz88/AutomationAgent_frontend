@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { healthCheck } from '@/lib/api';
+import { handleAgentMessage } from '@/lib/agentHandlers';
+import ChatInterface from '@/components/ChatInterface';
 import { 
   Target, 
   FileSearch, 
@@ -15,7 +18,21 @@ import {
 
 export default function CommandCenter() {
   const [activeAgent, setActiveAgent] = useState<number | null>(null);
-  const [apiStatus, setApiStatus] = useState<'online' | 'offline'>('online');
+  const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+
+  // Check API health on mount
+  useEffect(() => {
+    const checkApiHealth = async () => {
+      const health = await healthCheck();
+      setApiStatus(health.status === 'offline' || health.error ? 'offline' : 'online');
+    };
+    
+    checkApiHealth();
+    
+    // Check every 30 seconds
+    const interval = setInterval(checkApiHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const agents = [
     {
@@ -97,7 +114,9 @@ export default function CommandCenter() {
               {/* API Status */}
               <div className="flex items-center gap-2">
                 <Activity className={`w-5 h-5 ${
-                  apiStatus === 'online' ? 'text-military-green animate-pulse' : 'text-red-500'
+                  apiStatus === 'online' ? 'text-military-green animate-pulse' : 
+                  apiStatus === 'checking' ? 'text-military-orange animate-pulse' : 
+                  'text-red-500'
                 }`} />
                 <span className="text-sm font-mono">
                   API: {apiStatus.toUpperCase()}
@@ -226,38 +245,17 @@ export default function CommandCenter() {
           })}
         </div>
 
-        {/* Active Agent Panel */}
+        {/* Active Agent Chat Interface */}
         {activeAgent && (
-          <div className="mt-8 border-2 border-military-green/50 bg-military-dark/70 rounded-lg p-8 animate-pulse-glow">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-military-orange">
-                [ AGENT-{String(activeAgent).padStart(3, '0')} DEPLOYMENT INTERFACE ]
-              </h3>
-              <button
-                onClick={() => setActiveAgent(null)}
-                className="text-military-green hover:text-military-orange transition-colors font-mono text-sm"
-              >
-                [ CLOSE ]
-              </button>
-            </div>
-            
-            <div className="bg-military-darker border border-military-green/20 rounded p-6">
-              <p className="text-military-green/70 font-mono mb-4">
-                &gt;&gt; AGENT INTERFACE READY
-              </p>
-              <p className="text-military-green/50 font-mono text-sm">
-                Deploy Agent {activeAgent} operations from this terminal.
-                Full agent interfaces coming soon...
-              </p>
-              
-              {/* Placeholder for agent-specific forms */}
-              <div className="mt-6 p-4 border border-military-green/20 rounded bg-military-dark/50">
-                <p className="text-military-green/60 font-mono text-sm text-center">
-                  [ TACTICAL INTERFACE - UNDER DEVELOPMENT ]
-                </p>
-              </div>
-            </div>
-          </div>
+          <ChatInterface
+            agentId={activeAgent}
+            agentName={agents.find(a => a.id === activeAgent)?.name || ''}
+            agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
+            onClose={() => setActiveAgent(null)}
+            onSubmit={async (userInput) => {
+              return await handleAgentMessage(activeAgent, userInput);
+            }}
+          />
         )}
 
         {/* System Info Footer */}
