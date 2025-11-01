@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, User, Bot, AlertCircle } from 'lucide-react';
+import { Send, Loader2, User, Bot, AlertCircle, Copy, Check } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'agent' | 'system';
@@ -52,6 +52,7 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -66,6 +67,21 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (copiedIndex === null) return;
+    const timeout = setTimeout(() => setCopiedIndex(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [copiedIndex]);
+
+  const handleCopy = async (content: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedIndex(index);
+    } catch (error) {
+      console.error('Clipboard copy failed', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,31 +129,31 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-military-darker/95 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl h-[80vh] bg-military-dark border-2 border-military-green/50 rounded-lg flex flex-col shadow-[0_0_50px_rgba(0,255,65,0.3)]">
+    <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl h-[80vh] bg-military-dark border border-military-border rounded-lg flex flex-col shadow-lg">
         {/* Header */}
-        <div className="border-b-2 border-military-green/30 p-4 flex items-center justify-between bg-military-darker/50">
+        <div className="border-b border-military-border p-4 flex items-center justify-between bg-military-darker/70">
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-military-green rounded-full animate-pulse" />
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-military-green" />
             <div>
-              <h3 className="text-lg font-bold text-military-orange">
+              <h3 className="text-lg font-semibold text-military-orange tracking-wide uppercase">
                 {agentCodename}
               </h3>
-              <p className="text-sm text-military-green/70 font-mono">
+              <p className="text-xs text-military-muted font-mono">
                 {agentName}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-military-green hover:text-military-orange transition-colors font-mono text-sm px-4 py-2 border border-military-green/50 hover:border-military-orange rounded"
+            className="text-military-muted hover:text-military-orange transition-colors font-mono text-xs px-4 py-2 border border-military-border hover:border-military-orange rounded uppercase tracking-wide"
           >
-            [ CLOSE ]
+            Close
           </button>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-military-dark/40">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -146,10 +162,10 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
               }`}
             >
               {message.role !== 'user' && (
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                <div className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center ${
                   message.role === 'agent' 
-                    ? 'bg-military-green/20 border border-military-green/50'
-                    : 'bg-military-orange/20 border border-military-orange/50'
+                    ? 'bg-military-gray border border-military-border'
+                    : 'bg-military-orange/20 border border-military-orange/40'
                 }`}>
                   {message.role === 'agent' ? (
                     <Bot className="w-5 h-5 text-military-green" />
@@ -160,25 +176,43 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
               )}
 
               <div
-                className={`max-w-[70%] rounded-lg p-4 ${
+                className={`relative max-w-[70%] rounded-md p-4 ${
                   message.role === 'user'
-                    ? 'bg-military-green/10 border border-military-green/30'
+                    ? 'bg-military-gray border border-military-border'
                     : message.role === 'agent'
-                    ? 'bg-military-dark border border-military-green/20'
+                    ? 'bg-military-dark/60 border border-military-border'
                     : 'bg-military-orange/10 border border-military-orange/30'
                 }`}
               >
-                <p className="text-military-green/90 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(message.content, index)}
+                  className="absolute -top-3 right-2 inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors"
+                  aria-label="Copy message"
+                >
+                  {copiedIndex === index ? (
+                    <>
+                      <Check className="h-3 w-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      Copy
+                    </>
+                  )}
+                </button>
+                <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {message.content}
                 </p>
-                <p className="text-xs text-military-green/40 mt-2 font-mono">
+                <p className="text-xs text-military-muted mt-2 font-mono">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
               </div>
 
               {message.role === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-military-green/20 border border-military-green/50 flex items-center justify-center">
-                  <User className="w-5 h-5 text-military-green" />
+                <div className="flex-shrink-0 w-8 h-8 rounded-md bg-military-gray border border-military-border flex items-center justify-center">
+                  <User className="w-5 h-5 text-military-text" />
                 </div>
               )}
             </div>
@@ -186,13 +220,13 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-military-green/20 border border-military-green/50 flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 rounded-md bg-military-gray border border-military-border flex items-center justify-center">
                 <Bot className="w-5 h-5 text-military-green" />
               </div>
-              <div className="bg-military-dark border border-military-green/20 rounded-lg p-4">
+              <div className="bg-military-dark/60 border border-military-border rounded-md p-4">
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-military-green animate-spin" />
-                  <p className="text-military-green/70 text-sm font-mono">
+                  <p className="text-military-muted text-sm font-mono">
                     Processing...
                   </p>
                 </div>
@@ -204,7 +238,7 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
         </div>
 
         {/* Input Area */}
-        <div className="border-t-2 border-military-green/30 p-4 bg-military-darker/50">
+        <div className="border-t border-military-border p-4 bg-military-darker/70">
           <form onSubmit={handleSubmit} className="flex gap-3">
             <textarea
               ref={inputRef}
@@ -214,12 +248,12 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
               placeholder="Ask anything about YouTube, share URLs, or request analysis... (Shift+Enter for new line)"
               disabled={isLoading}
               rows={3}
-              className="flex-1 bg-military-dark border border-military-green/30 rounded-lg px-4 py-3 text-military-green placeholder-military-green/40 focus:outline-none focus:border-military-green/60 resize-none font-mono text-sm disabled:opacity-50"
+              className="flex-1 bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green resize-none font-mono text-sm disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="px-6 py-3 bg-military-green/20 border-2 border-military-green hover:bg-military-green hover:text-military-dark text-military-green rounded-lg font-mono font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-military-green/20 disabled:hover:text-military-green flex items-center gap-2"
+              className="px-5 py-3 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-military-green/20 disabled:hover:text-military-text flex items-center gap-2"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -231,8 +265,8 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
               )}
             </button>
           </form>
-          <p className="text-xs text-military-green/40 mt-2 font-mono">
-            Press Enter to send • Shift+Enter for new line
+          <p className="text-xs text-military-muted mt-2 font-mono">
+            Press Enter to send · Shift+Enter for new line
           </p>
         </div>
       </div>
@@ -242,15 +276,15 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
           width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(0, 255, 65, 0.1);
+          background: rgba(90, 135, 108, 0.1);
           border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(0, 255, 65, 0.3);
+          background: rgba(90, 135, 108, 0.3);
           border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 255, 65, 0.5);
+          background: rgba(90, 135, 108, 0.5);
         }
       `}</style>
     </div>
