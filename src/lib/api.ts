@@ -8,24 +8,6 @@ export interface AgentResponse {
   error?: string;
 }
 
-// Notepad Types
-export interface NotepadHistoryEntry {
-  content: string;
-  updated_at?: string | null;
-}
-
-export interface NoteSummary {
-  id: string;
-  name: string;
-  updated_at?: string | null;
-  created_at?: string | null;
-}
-
-export interface NoteDetail extends NoteSummary {
-  content: string;
-  history: NotepadHistoryEntry[];
-}
-
 // Agent 1: Channel Audit
 export interface ChannelAuditRequest {
   channel_urls: string[];
@@ -227,61 +209,4 @@ export async function healthCheck(): Promise<{ status: string; service?: string;
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
-}
-
-// Notepad API Helpers
-export async function listNotes(): Promise<NoteSummary[]> {
-  const response = await fetch(`${API_BASE}/api/notepad`);
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-  }
-  return await response.json();
-}
-
-export async function createNote(name: string, content = ''): Promise<NoteDetail> {
-  const response = await fetch(`${API_BASE}/api/notepad`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, content }),
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `API Error: ${response.status}`);
-  }
-  return await response.json();
-}
-
-export async function getNote(noteId: string): Promise<NoteDetail> {
-  const response = await fetch(`${API_BASE}/api/notepad/${noteId}`);
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-  }
-  return await response.json();
-}
-
-export async function updateNote(noteId: string, data: { name?: string; content?: string }): Promise<NoteDetail> {
-  const response = await fetch(`${API_BASE}/api/notepad/${noteId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `API Error: ${response.status}`);
-  }
-  return await response.json();
-}
-
-export async function deleteNote(noteId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/notepad/${noteId}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `API Error: ${response.status}`);
-  }
-}
-
-export function getNoteDownloadUrl(noteId: string): string {
-  return `${API_BASE}/api/notepad/${noteId}/download`;
 }
