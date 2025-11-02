@@ -1,12 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, User, Bot, AlertCircle, Copy, Check } from 'lucide-react';
+import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'agent' | 'system';
   content: string;
   timestamp: Date;
+}
+
+interface SaveResponsePayload {
+  content: string;
+  agentId: number;
+  agentName: string;
+  agentCodename: string;
 }
 
 interface ChatInterfaceProps {
@@ -15,14 +22,16 @@ interface ChatInterfaceProps {
   agentCodename: string;
   onClose: () => void;
   onSubmit: (userInput: string, formData?: any) => Promise<{ success: boolean; result: string; error?: string }>;
+  onSaveResponse?: (payload: SaveResponsePayload) => Promise<void>;
 }
 
-export default function ChatInterface({ 
-  agentId, 
-  agentName, 
+export default function ChatInterface({
+  agentId,
+  agentName,
   agentCodename,
   onClose,
-  onSubmit 
+  onSubmit,
+  onSaveResponse
 }: ChatInterfaceProps) {
   const getInitialMessage = (agentId: number, agentName: string): string => {
     const messages: { [key: number]: string } = {
@@ -53,6 +62,7 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<Record<number, 'saving' | 'saved' | 'error'>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -80,6 +90,34 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
       setCopiedIndex(index);
     } catch (error) {
       console.error('Clipboard copy failed', error);
+    }
+  };
+
+  const scheduleSaveStatusClear = (index: number) => {
+    setTimeout(() => {
+      setSaveStatus(prev => {
+        const { [index]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }, 2000);
+  };
+
+  const handleSave = async (content: string, index: number) => {
+    if (!onSaveResponse) return;
+    setSaveStatus(prev => ({ ...prev, [index]: 'saving' }));
+    try {
+      await onSaveResponse({
+        content,
+        agentId,
+        agentName,
+        agentCodename
+      });
+      setSaveStatus(prev => ({ ...prev, [index]: 'saved' }));
+      scheduleSaveStatusClear(index);
+    } catch (error) {
+      console.error('Save response failed', error);
+      setSaveStatus(prev => ({ ...prev, [index]: 'error' }));
+      scheduleSaveStatusClear(index);
     }
   };
 
@@ -184,24 +222,65 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
                     : 'bg-military-orange/10 border border-military-orange/30'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => handleCopy(message.content, index)}
-                  className="absolute -top-3 right-2 inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors"
-                  aria-label="Copy message"
-                >
-                  {copiedIndex === index ? (
-                    <>
-                      <Check className="h-3 w-3" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3 w-3" />
-                      Copy
-                    </>
+                <div className="absolute -top-3 right-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(message.content, index)}
+                    className="inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors"
+                    aria-label="Copy message"
+                  >
+                    {copiedIndex === index ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+
+                  {message.role === 'agent' && onSaveResponse && (
+                    <button
+                      type="button"
+                      onClick={() => handleSave(message.content, index)}
+                      disabled={saveStatus[index] === 'saving'}
+                      className={`inline-flex items-center gap-1 rounded bg-military-dark/70 border px-2 py-1 text-[10px] font-mono uppercase tracking-wide transition-colors ${
+                        saveStatus[index] === 'saved'
+                          ? 'border-military-green text-military-green'
+                          : saveStatus[index] === 'error'
+                          ? 'border-red-500 text-red-400 hover:text-red-300'
+                          : 'border-military-border text-military-muted hover:text-military-green'
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                      aria-label="Save response"
+                    >
+                      {saveStatus[index] === 'saving' ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Saving
+                        </>
+                      ) : saveStatus[index] === 'saved' ? (
+                        <>
+                          <BookmarkCheck className="h-3 w-3" />
+                          Saved
+                        </>
+                      ) : saveStatus[index] === 'error' ? (
+                        <>
+                          <AlertCircle className="h-3 w-3" />
+                          Retry
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="h-3 w-3" />
+                          Save
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
+                </div>
+
                 <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {message.content}
                 </p>

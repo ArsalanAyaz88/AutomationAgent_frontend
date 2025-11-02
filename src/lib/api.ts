@@ -8,6 +8,20 @@ export interface AgentResponse {
   error?: string;
 }
 
+export interface SavedResponseSummary {
+  id: string;
+  title: string;
+  agent_id: number;
+  agent_name: string;
+  agent_codename: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface SavedResponseDetail extends SavedResponseSummary {
+  content: string;
+}
+
 // Agent 1: Channel Audit
 export interface ChannelAuditRequest {
   channel_urls: string[];
@@ -196,11 +210,19 @@ export async function generateRoadmap(data: RoadmapGenerationRequest): Promise<A
 }
 
 // Health Check
-export async function healthCheck(): Promise<{ status: string; service?: string; message?: string; version?: string; error?: string }> {
+export interface HealthStatus {
+  status: string;
+  service?: string;
+  message?: string;
+  version?: string;
+  error?: string;
+}
+
+export async function healthCheck(): Promise<HealthStatus> {
   try {
-    const response = await fetch(`${API_BASE}/`);
+    const response = await fetch(`${API_BASE}/health`);
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
     return await response.json();
   } catch (error) {
@@ -208,5 +230,66 @@ export async function healthCheck(): Promise<{ status: string; service?: string;
       status: 'offline',
       error: error instanceof Error ? error.message : 'Unknown error'
     };
+  }
+}
+
+export async function listSavedResponses(): Promise<SavedResponseSummary[]> {
+  const response = await fetch(`${API_BASE}/api/saved-responses`);
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+export async function createSavedResponse(data: {
+  title: string;
+  content: string;
+  agent_id: number;
+  agent_name: string;
+  agent_codename: string;
+}): Promise<SavedResponseDetail> {
+  const response = await fetch(`${API_BASE}/api/saved-responses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `API Error: ${response.status}`);
+  }
+  return await response.json();
+}
+
+export async function getSavedResponse(responseId: string): Promise<SavedResponseDetail> {
+  const response = await fetch(`${API_BASE}/api/saved-responses/${responseId}`);
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+export async function updateSavedResponse(
+  responseId: string,
+  data: { title?: string; content?: string }
+): Promise<SavedResponseDetail> {
+  const response = await fetch(`${API_BASE}/api/saved-responses/${responseId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `API Error: ${response.status}`);
+  }
+  return await response.json();
+}
+
+export async function deleteSavedResponse(responseId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/saved-responses/${responseId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `API Error: ${response.status}`);
   }
 }
