@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { formatAgentOutput } from '@/lib/formatters';
 
 interface Message {
   role: 'user' | 'agent' | 'system';
@@ -283,7 +284,7 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
                 </div>
 
                 <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {message.content}
+                  {message.role === 'agent' ? formatAgentOutput(message.content, agentId) : message.content}
                 </p>
                 <p className="text-xs text-military-muted mt-2 font-mono">
                   {message.timestamp.toLocaleTimeString()}
