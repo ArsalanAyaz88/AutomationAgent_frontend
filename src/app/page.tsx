@@ -38,6 +38,8 @@ export default function CommandCenter() {
   const [selectedSavedResponse, setSelectedSavedResponse] = useState<SavedResponseDetail | null>(null);
   const [savedResponseStatus, setSavedResponseStatus] = useState<'idle' | 'loading' | 'saving' | 'error'>('idle');
   const [savedResponseMessage, setSavedResponseMessage] = useState<string | null>(null);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
 
   // Check API health on mount
   useEffect(() => {
@@ -431,7 +433,10 @@ export default function CommandCenter() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleUpdateSavedResponse(prompt('Rename file', selectedSavedResponse.title) || selectedSavedResponse.title)}
+                        onClick={() => {
+                          setRenameValue(selectedSavedResponse.title);
+                          setIsRenameModalOpen(true);
+                        }}
                         className="inline-flex items-center gap-1 px-2 py-1 border border-military-border rounded-md text-[11px] font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
                       >
                         <Pencil className="h-3 w-3" />
@@ -455,6 +460,50 @@ export default function CommandCenter() {
             </div>
           </aside>
         </div>
+
+        {/* Rename Modal */}
+        {isRenameModalOpen && selectedSavedResponse && (
+          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-military-dark border border-military-border rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-military-orange tracking-wide uppercase mb-4">
+                Rename File
+              </h3>
+              <input
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUpdateSavedResponse(renameValue);
+                    setIsRenameModalOpen(false);
+                  }
+                }}
+                className="w-full bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green font-mono text-sm mb-4"
+                placeholder="Enter new name"
+                autoFocus
+              />
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsRenameModalOpen(false)}
+                  className="px-4 py-2 bg-military-dark border border-military-border hover:border-military-orange text-military-muted hover:text-military-orange rounded-md font-mono text-sm transition-colors uppercase"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleUpdateSavedResponse(renameValue);
+                    setIsRenameModalOpen(false);
+                  }}
+                  className="px-4 py-2 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors uppercase"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Active Agent Chat Interface */}
         {activeAgent && (

@@ -112,11 +112,12 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
         agentName,
         agentCodename
       });
+      // Keep 'saved' status permanently, don't clear it
       setSaveStatus(prev => ({ ...prev, [index]: 'saved' }));
-      scheduleSaveStatusClear(index);
     } catch (error) {
       console.error('Save response failed', error);
       setSaveStatus(prev => ({ ...prev, [index]: 'error' }));
+      // Only clear error status after 2 seconds
       scheduleSaveStatusClear(index);
     }
   };
@@ -246,7 +247,7 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
                     <button
                       type="button"
                       onClick={() => handleSave(message.content, index)}
-                      disabled={saveStatus[index] === 'saving'}
+                      disabled={saveStatus[index] === 'saving' || saveStatus[index] === 'saved'}
                       className={`inline-flex items-center gap-1 rounded bg-military-dark/70 border px-2 py-1 text-[10px] font-mono uppercase tracking-wide transition-colors ${
                         saveStatus[index] === 'saved'
                           ? 'border-military-green text-military-green'
