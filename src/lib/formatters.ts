@@ -6,10 +6,23 @@
  * Removes special formatting characters and emojis from text
  * Cleans up markdown symbols, box-drawing characters, and emojis
  */
-export function cleanAgentOutput(text: string): string {
+interface CleanOptions {
+  preserveCodeBlocks?: boolean;
+}
+
+export function cleanAgentOutput(text: string, options: CleanOptions = {}): string {
   if (!text) return '';
 
   let cleaned = text;
+  const { preserveCodeBlocks = false } = options;
+  const codeBlocks: string[] = [];
+
+  if (preserveCodeBlocks) {
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, (block) => {
+      const index = codeBlocks.push(block) - 1;
+      return `__CODE_BLOCK_${index}__`;
+    });
+  }
 
   // Remove emojis (all unicode emoji ranges)
   cleaned = cleaned.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
@@ -26,8 +39,10 @@ export function cleanAgentOutput(text: string): string {
   // Remove markdown headers (## HEADER)
   cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
 
-  // Remove backticks used for code blocks
-  cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+  // Remove backticks used for code blocks unless preserved
+  if (!preserveCodeBlocks) {
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+  }
   cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
 
   // Clean up excessive whitespace
@@ -39,6 +54,13 @@ export function cleanAgentOutput(text: string): string {
 
   // Remove leading/trailing whitespace
   cleaned = cleaned.trim();
+
+  if (preserveCodeBlocks) {
+    codeBlocks.forEach((block, index) => {
+      const token = `__CODE_BLOCK_${index}__`;
+      cleaned = cleaned.replace(token, block);
+    });
+  }
 
   return cleaned;
 }
@@ -58,7 +80,7 @@ export function formatAgentOutput(text: string, agentId?: number): string {
 
   // Apply cleaning for Agent 4 (Scene Director) specifically
   if (agentId === 4) {
-    formatted = cleanAgentOutput(formatted);
+    formatted = cleanAgentOutput(formatted, { preserveCodeBlocks: true });
     formatted = formatTimestamp(formatted);
   }
 
