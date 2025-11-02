@@ -45,6 +45,7 @@ export default function CommandCenter() {
   const [renameValue, setRenameValue] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [copiedResponseId, setCopiedResponseId] = useState<string | null>(null);
+  const [isResponseViewModalOpen, setIsResponseViewModalOpen] = useState(false);
 
   // Check API health on mount
   useEffect(() => {
@@ -72,13 +73,7 @@ export default function CommandCenter() {
         setSavedResponseStatus('loading');
         const responses = await listSavedResponses();
         setSavedResponses(responses);
-        if (responses.length > 0) {
-          await handleSelectSavedResponse(responses[0].id);
-        } else {
-          setSelectedSavedResponseId(null);
-          setSelectedSavedResponse(null);
-          setSavedResponseStatus('idle');
-        }
+        setSavedResponseStatus('idle');
       } catch (error) {
         console.error('Failed to load saved responses', error);
         setSavedResponseStatus('error');
@@ -89,16 +84,12 @@ export default function CommandCenter() {
     fetchSavedResponses();
   }, []);
 
-  const refreshSavedResponses = async (responseId?: string | null) => {
+  const refreshSavedResponses = async (keepSelection: boolean = false) => {
     try {
       const responses = await listSavedResponses();
       setSavedResponses(responses);
-      const targetId = responseId ?? selectedSavedResponseId ?? (responses.length > 0 ? responses[0].id : null);
-      if (targetId) {
-        await handleSelectSavedResponse(targetId);
-      } else {
-        setSelectedSavedResponseId(null);
-        setSelectedSavedResponse(null);
+      if (keepSelection && selectedSavedResponseId) {
+        await handleSelectSavedResponse(selectedSavedResponseId);
       }
       setSavedResponseStatus('idle');
     } catch (error) {
@@ -109,12 +100,12 @@ export default function CommandCenter() {
   };
 
   const handleSelectSavedResponse = async (responseId: string) => {
-    if (responseId === selectedSavedResponseId) return;
     try {
       setSavedResponseStatus('loading');
       const detail = await getSavedResponse(responseId);
       setSelectedSavedResponseId(responseId);
       setSelectedSavedResponse(detail);
+      setIsResponseViewModalOpen(true);
       setSavedResponseStatus('idle');
       setSavedResponseMessage(null);
     } catch (error) {
@@ -127,14 +118,14 @@ export default function CommandCenter() {
   const handleSaveChatResponse = async (payload: { content: string; agentId: number; agentName: string; agentCodename: string }) => {
     try {
       setSavedResponseStatus('saving');
-      const created = await createSavedResponse({
+      await createSavedResponse({
         title: `${payload.agentCodename} Response`,
         content: payload.content,
         agent_id: payload.agentId,
         agent_name: payload.agentName,
         agent_codename: payload.agentCodename
       });
-      await refreshSavedResponses(created.id);
+      await refreshSavedResponses(false);
       setSavedResponseStatus('idle');
     } catch (error) {
       console.error('Failed to save response', error);
@@ -150,7 +141,7 @@ export default function CommandCenter() {
       setSavedResponseStatus('saving');
       const updated = await updateSavedResponse(selectedSavedResponseId, { title, content });
       setSelectedSavedResponse(updated);
-      await refreshSavedResponses(updated.id);
+      await refreshSavedResponses(true);
       setSavedResponseStatus('idle');
     } catch (error) {
       console.error('Failed to update response', error);
@@ -164,17 +155,12 @@ export default function CommandCenter() {
     try {
       setSavedResponseStatus('saving');
       await deleteSavedResponse(selectedSavedResponseId);
-      const remaining = savedResponses.filter(item => item.id !== selectedSavedResponseId);
-      setSavedResponses(remaining);
-      const nextId = remaining.length > 0 ? remaining[0].id : null;
-      if (nextId) {
-        await handleSelectSavedResponse(nextId);
-      } else {
-        setSelectedSavedResponseId(null);
-        setSelectedSavedResponse(null);
-      }
-      setSavedResponseStatus('idle');
+      setSelectedSavedResponseId(null);
+      setSelectedSavedResponse(null);
+      setIsResponseViewModalOpen(false);
       setIsDeleteModalOpen(false);
+      await refreshSavedResponses(false);
+      setSavedResponseStatus('idle');
     } catch (error) {
       console.error('Failed to delete response', error);
       setSavedResponseStatus('error');
@@ -476,21 +462,16 @@ export default function CommandCenter() {
               </button>
             </header>
 
-            <div className="flex-1 flex flex-col gap-4">
-              <div className="flex-1 border border-military-border rounded-md bg-military-dark/60 p-3 overflow-y-auto space-y-2">
+            <div className="flex-1 flex flex-col gap-4 min-h-0">
+              <div className="flex-1 border border-military-border rounded-md bg-military-dark/60 p-3 overflow-y-auto space-y-2 max-h-[calc(100vh-400px)]">
                 {savedResponses.length > 0 ? (
                   savedResponses.map((response) => {
-                    const isActive = response.id === selectedSavedResponseId;
                     return (
                       <button
                         key={response.id}
                         type="button"
                         onClick={() => handleSelectSavedResponse(response.id)}
-                        className={`w-full text-left px-3 py-2 rounded-md border text-sm font-mono transition-colors ${
-                          isActive
-                            ? 'border-military-green bg-military-green/10 text-military-text'
-                            : 'border-military-border text-military-muted hover:border-military-green hover:text-military-text'
-                        }`}
+                        className="w-full text-left px-3 py-2 rounded-md border text-sm font-mono transition-colors border-military-border text-military-muted hover:border-military-green hover:text-military-text"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate">{response.title}</span>
@@ -508,78 +489,95 @@ export default function CommandCenter() {
                   </p>
                 )}
               </div>
-
-              {selectedSavedResponse && (
-                <div className="border border-military-border rounded-md bg-military-dark/60 p-3 space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h4 className="text-sm font-mono uppercase tracking-wide text-military-orange">{selectedSavedResponse.title}</h4>
-                        <p className="text-[10px] text-military-muted">
-                          {selectedSavedResponse.updated_at ? new Date(selectedSavedResponse.updated_at).toLocaleString() : 'Not updated'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyResponse(selectedSavedResponse.content, selectedSavedResponse.id)}
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-military-border rounded-md text-[11px] font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
-                      >
-                        {copiedResponseId === selectedSavedResponse.id ? (
-                          <>
-                            <Check className="h-3 w-3" />
-                            Copied
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" />
-                            Copy
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadPDF(
-                          selectedSavedResponse.title,
-                          selectedSavedResponse.content,
-                          selectedSavedResponse.agent_name,
-                          selectedSavedResponse.created_at ?? undefined
-                        )}
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-military-border rounded-md text-[11px] font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
-                      >
-                        <Download className="h-3 w-3" />
-                        Download
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRenameValue(selectedSavedResponse.title);
-                          setIsRenameModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-military-border rounded-md text-[11px] font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
-                      >
-                        <Pencil className="h-3 w-3" />
-                        Rename
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsDeleteModalOpen(true)}
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-military-border rounded-md text-[11px] font-mono uppercase tracking-wide text-red-400 hover:border-red-400 transition-colors"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div className="text-xs font-mono text-military-text whitespace-pre-wrap break-words border border-military-border rounded-md bg-military-dark/70 p-3 max-h-48 overflow-y-auto">
-                    {selectedSavedResponse.content}
-                  </div>
-                </div>
-              )}
             </div>
           </aside>
         </div>
+
+        {/* Response View Modal */}
+        {isResponseViewModalOpen && selectedSavedResponse && (
+          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-3xl bg-military-dark border border-military-border rounded-lg shadow-lg flex flex-col max-h-[85vh]">
+              {/* Modal Header */}
+              <div className="border-b border-military-border p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-mono uppercase tracking-wide text-military-orange">{selectedSavedResponse.title}</h3>
+                  <p className="text-xs text-military-muted mt-1">
+                    {selectedSavedResponse.agent_name} • {selectedSavedResponse.updated_at ? new Date(selectedSavedResponse.updated_at).toLocaleString() : 'Not updated'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsResponseViewModalOpen(false)}
+                  className="text-military-muted hover:text-military-orange transition-colors font-mono text-xs px-4 py-2 border border-military-border hover:border-military-orange rounded uppercase tracking-wide"
+                >
+                  Close
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="text-sm font-mono text-military-text whitespace-pre-wrap break-words border border-military-border rounded-md bg-military-dark/70 p-4">
+                  {selectedSavedResponse.content}
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="border-t border-military-border p-4">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyResponse(selectedSavedResponse.content, selectedSavedResponse.id)}
+                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
+                  >
+                    {copiedResponseId === selectedSavedResponse.id ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPDF(
+                      selectedSavedResponse.title,
+                      selectedSavedResponse.content,
+                      selectedSavedResponse.agent_name,
+                      selectedSavedResponse.created_at ?? undefined
+                    )}
+                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRenameValue(selectedSavedResponse.title);
+                      setIsRenameModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-red-400 hover:border-red-400 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         {isDeleteModalOpen && selectedSavedResponse && (
