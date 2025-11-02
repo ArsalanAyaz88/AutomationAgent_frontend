@@ -224,71 +224,72 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
                     : 'bg-military-orange/10 border border-military-orange/30'
                 }`}
               >
-                <div className="absolute -top-3 right-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(message.content, index)}
-                    className="inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors"
-                    aria-label="Copy message"
-                  >
-                    {copiedIndex === index ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        Copy
-                      </>
-                    )}
-                  </button>
-
-                  {message.role === 'agent' && onSaveResponse && (
-                    <button
-                      type="button"
-                      onClick={() => handleSave(message.content, index)}
-                      disabled={saveStatus[index] === 'saving' || saveStatus[index] === 'saved'}
-                      className={`inline-flex items-center gap-1 rounded bg-military-dark/70 border px-2 py-1 text-[10px] font-mono uppercase tracking-wide transition-colors ${
-                        saveStatus[index] === 'saved'
-                          ? 'border-military-green text-military-green'
-                          : saveStatus[index] === 'error'
-                          ? 'border-red-500 text-red-400 hover:text-red-300'
-                          : 'border-military-border text-military-muted hover:text-military-green'
-                      } disabled:cursor-not-allowed disabled:opacity-60`}
-                      aria-label="Save response"
-                    >
-                      {saveStatus[index] === 'saving' ? (
-                        <>
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Saving
-                        </>
-                      ) : saveStatus[index] === 'saved' ? (
-                        <>
-                          <BookmarkCheck className="h-3 w-3" />
-                          Saved
-                        </>
-                      ) : saveStatus[index] === 'error' ? (
-                        <>
-                          <AlertCircle className="h-3 w-3" />
-                          Retry
-                        </>
-                      ) : (
-                        <>
-                          <Bookmark className="h-3 w-3" />
-                          Save
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
                 <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {message.role === 'agent' ? formatAgentOutput(message.content, agentId) : message.content}
                 </p>
-                <p className="text-xs text-military-muted mt-2 font-mono">
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <p className="text-xs text-military-muted font-mono">
+                    {message.timestamp.toLocaleTimeString()}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(message.content, index)}
+                      className="inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors"
+                      aria-label="Copy message"
+                    >
+                      {copiedIndex === index ? (
+                        <>
+                          <Check className="h-3 w-3" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3" />
+                          Copy
+                        </>
+                      )}
+                    </button>
+
+                    {message.role === 'agent' && onSaveResponse && (
+                      <button
+                        type="button"
+                        onClick={() => handleSave(message.content, index)}
+                        disabled={saveStatus[index] === 'saving' || saveStatus[index] === 'saved'}
+                        className={`inline-flex items-center gap-1 rounded bg-military-dark/70 border px-2 py-1 text-[10px] font-mono uppercase tracking-wide transition-colors ${
+                          saveStatus[index] === 'saved'
+                            ? 'border-military-green text-military-green'
+                            : saveStatus[index] === 'error'
+                            ? 'border-red-500 text-red-400 hover:text-red-300'
+                            : 'border-military-border text-military-muted hover:text-military-green'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                        aria-label="Save response"
+                      >
+                        {saveStatus[index] === 'saving' ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Saving
+                          </>
+                        ) : saveStatus[index] === 'saved' ? (
+                          <>
+                            <BookmarkCheck className="h-3 w-3" />
+                            Saved
+                          </>
+                        ) : saveStatus[index] === 'error' ? (
+                          <>
+                            <AlertCircle className="h-3 w-3" />
+                            Retry
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="h-3 w-3" />
+                            Save
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {message.role === 'user' && (
