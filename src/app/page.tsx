@@ -40,6 +40,7 @@ export default function CommandCenter() {
   const [savedResponseMessage, setSavedResponseMessage] = useState<string | null>(null);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Check API health on mount
   useEffect(() => {
@@ -156,8 +157,6 @@ export default function CommandCenter() {
 
   const handleDeleteSavedResponse = async () => {
     if (!selectedSavedResponseId) return;
-    const confirmDelete = window.confirm('Delete this saved response? This action cannot be undone.');
-    if (!confirmDelete) return;
     try {
       setSavedResponseStatus('saving');
       await deleteSavedResponse(selectedSavedResponseId);
@@ -171,10 +170,12 @@ export default function CommandCenter() {
         setSelectedSavedResponse(null);
       }
       setSavedResponseStatus('idle');
+      setIsDeleteModalOpen(false);
     } catch (error) {
       console.error('Failed to delete response', error);
       setSavedResponseStatus('error');
       setSavedResponseMessage(error instanceof Error ? error.message : 'Unable to delete response');
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -444,7 +445,7 @@ export default function CommandCenter() {
                       </button>
                       <button
                         type="button"
-                        onClick={handleDeleteSavedResponse}
+                        onClick={() => setIsDeleteModalOpen(true)}
                         className="inline-flex items-center gap-1 px-2 py-1 border border-military-border rounded-md text-[11px] font-mono uppercase tracking-wide text-red-400 hover:border-red-400 transition-colors"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -460,6 +461,40 @@ export default function CommandCenter() {
             </div>
           </aside>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && selectedSavedResponse && (
+          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-military-dark border border-red-500/50 rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-red-400 tracking-wide uppercase mb-4">
+                Delete Saved Response
+              </h3>
+              <p className="text-military-text text-sm mb-2">
+                Are you sure you want to delete <span className="text-military-orange font-semibold">"{selectedSavedResponse.title}"</span>?
+              </p>
+              <p className="text-military-muted text-xs mb-6">
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="px-4 py-2 bg-military-dark border border-military-border hover:border-military-green text-military-muted hover:text-military-green rounded-md font-mono text-sm transition-colors uppercase"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteSavedResponse}
+                  disabled={savedResponseStatus === 'saving'}
+                  className="px-4 py-2 bg-red-500/20 border border-red-500 hover:bg-red-500 hover:text-white text-red-400 rounded-md font-mono text-sm font-semibold transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savedResponseStatus === 'saving' ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Rename Modal */}
         {isRenameModalOpen && selectedSavedResponse && (
