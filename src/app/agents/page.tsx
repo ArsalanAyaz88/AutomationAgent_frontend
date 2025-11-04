@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   healthCheck,
   listSavedResponses,
@@ -33,6 +34,7 @@ import {
 } from 'lucide-react';
 
 export default function CommandCenter() {
+  const router = useRouter();
   const [activeAgent, setActiveAgent] = useState<number | null>(null);
   const [missionTime, setMissionTime] = useState<string>(new Date().toLocaleTimeString());
   const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>('checking');
@@ -59,6 +61,17 @@ export default function CommandCenter() {
     const interval = setInterval(checkApiHealth, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // If user refreshes this page (type === 'reload'), send them back to splash '/'
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    const nav = navEntries && navEntries[0];
+    const isReload = (nav && nav.type === 'reload') || (performance as any)?.navigation?.type === 1;
+    if (isReload) {
+      router.replace('/');
+    }
+  }, [router]);
 
   useEffect(() => {
     const timer = setInterval(() => {
