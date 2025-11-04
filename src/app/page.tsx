@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   healthCheck,
   listSavedResponses,
@@ -33,6 +34,7 @@ import {
 } from 'lucide-react';
 
 export default function CommandCenter() {
+  const router = useRouter();
   const [activeAgent, setActiveAgent] = useState<number | null>(null);
   const [missionTime, setMissionTime] = useState<string>(new Date().toLocaleTimeString());
   const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>('checking');
@@ -310,382 +312,34 @@ export default function CommandCenter() {
   ];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-military-darker via-military-gray to-military-dark text-military-text overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-80 mix-blend-lighten">
-        <div className="absolute -inset-20 animate-smoke bg-[radial-gradient(circle_at_top,_rgba(92,154,111,0.12)_0%,_transparent_60%)]" />
-        <div className="absolute inset-0 animate-smoke [animation-delay:8s] bg-[radial-gradient(circle_at_bottom,_rgba(63,111,83,0.1)_0%,_transparent_55%)]" />
+    <div className="relative min-h-screen grid place-items-center grid-bg text-military-text overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="scan-line" />
       </div>
-      {/* Header */}
-      <header className="border-b border-military-border/60 bg-military-dark/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Shield className="w-9 h-9 text-military-green" />
-              <div>
-                <h1 className="text-2xl font-semibold tracking-wide text-military-text">
-                  <span className="text-military-orange">YOUTUBE</span>{' '}
-                  <span className="text-military-green">OPS COMMAND</span>
-                </h1>
-                <p className="text-xs text-military-muted font-mono uppercase">
-                  Tactical Content Warfare System v1.0
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              {/* API Status */}
-              <div className="flex items-center gap-2 text-sm font-mono text-military-muted">
-                <span
-                  className={`inline-flex h-2.5 w-2.5 rounded-full ${
-                    apiStatus === 'online' ? 'bg-military-green' :
-                    apiStatus === 'checking' ? 'bg-military-orange' : 'bg-military-red'
-                  }`}
-                />
-                <span>
-                  API: {apiStatus.toUpperCase()}
-                </span>
-              </div>
-              
-              {/* Mission Time */}
-              <div className="font-mono text-sm text-military-muted">
-                <span className="text-military-orange tracking-wide">MISSION TIME:</span>{' '}
-                {missionTime}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8 space-y-10">
-        {/* Mission Briefing */}
-        <div className="border border-military-border bg-military-dark/70 p-6 rounded-lg shadow-lg">
-          <div className="flex items-start gap-4">
-            <Terminal className="w-6 h-6 text-military-orange mt-1" />
-            <div>
-              <h2 className="text-xl font-semibold text-military-orange mb-2 tracking-wide uppercase">
-                Mission Briefing
-              </h2>
-              <p className="text-military-muted leading-relaxed">
-                Deploy six coordinated AI units for comprehensive YouTube intelligence and operational planning.
-                Select an asset to initiate reconnaissance, analytics, or strategic execution.
-              </p>
-            </div>
-          </div>
+      <div className="relative z-10 flex flex-col items-center gap-8 p-8">
+        <div className="relative flex items-center justify-center w-40 h-40 rounded-full border-4 border-military-green/60 bg-military-dark shadow-[0_0_40px_rgba(0,255,65,0.15)]">
+          <div className="absolute inset-2 rounded-full border-2 border-military-green/40" />
+          <Shield className="w-16 h-16 text-military-green" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
-          {/* Agent Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {agents.map((agent) => {
-              const Icon = agent.icon;
-              const isActive = activeAgent === agent.id;
-
-              return (
-                <div
-                  key={agent.id}
-                  onClick={() => setActiveAgent(isActive ? null : agent.id)}
-                  className={`
-                    border transition-colors duration-200 cursor-pointer
-                    rounded-lg p-6 h-full flex flex-col justify-between
-                    ${
-                      isActive
-                        ? 'border-military-green bg-military-gray/40'
-                        : 'border-military-border bg-military-dark/70 hover:border-military-green'
-                    }
-                  `}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-md border ${
-                          isActive
-                            ? 'border-military-green bg-military-green/10'
-                            : 'border-military-border bg-military-gray'
-                        }`}>
-                          <Icon className="w-6 h-6 text-military-green" />
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-mono tracking-wide text-military-orange uppercase">
-                            {agent.codename}
-                          </h3>
-                          <p className="text-lg font-semibold text-military-text">
-                            {agent.name}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-mono text-military-muted border border-military-border rounded px-2 py-1 uppercase">
-                        {agent.status}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-military-muted leading-relaxed">
-                      {agent.description}
-                    </p>
-
-                    <button
-                      className={`
-                        w-full py-2 px-4 rounded font-mono text-sm font-semibold
-                        transition-colors duration-200
-                        ${
-                          isActive
-                            ? 'bg-military-green text-military-dark border border-military-green'
-                            : 'bg-transparent border border-military-border text-military-muted hover:border-military-green hover:text-military-text'
-                        }
-                      `}
-                    >
-                      {isActive ? 'Active' : 'Deploy'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Saved Responses Sidebar */}
-          <aside className="border border-military-border bg-military-dark/70 rounded-lg shadow-lg p-5 flex flex-col">
-            <header className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-mono uppercase tracking-wide text-military-orange">Saved Responses</h3>
-                <p className="text-xs text-military-muted">Bookmark agent intel for later reuse.</p>
-                {savedResponseStatus === 'error' && savedResponseMessage && (
-                  <p className="text-xs text-red-400 mt-1">{savedResponseMessage}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => refreshSavedResponses()}
-                className="inline-flex items-center gap-2 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-text hover:border-military-green hover:text-military-green transition-colors"
-              >
-                <Loader2 className={`h-3 w-3 ${savedResponseStatus === 'loading' ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </header>
-
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
-              <div className="flex-1 border border-military-border rounded-md bg-military-dark/60 p-3 overflow-y-auto space-y-2 max-h-[calc(100vh-400px)]">
-                {savedResponses.length > 0 ? (
-                  savedResponses.map((response) => {
-                    return (
-                      <button
-                        key={response.id}
-                        type="button"
-                        onClick={() => handleSelectSavedResponse(response.id)}
-                        className="w-full text-left px-3 py-2 rounded-md border text-sm font-mono transition-colors border-military-border text-military-muted hover:border-military-green hover:text-military-text"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate">{response.title}</span>
-                          <BookmarkCheck className="h-3 w-3 text-military-orange" />
-                        </div>
-                        <p className="mt-1 text-[10px] text-military-muted/80">
-                          {response.updated_at ? new Date(response.updated_at).toLocaleString() : 'Never updated'}
-                        </p>
-                      </button>
-                    );
-                  })
-                ) : (
-                  <p className="text-xs text-military-muted px-2 py-4 text-center border border-dashed border-military-border rounded-md">
-                    Saved responses will appear here once you save an agent output.
-                  </p>
-                )}
-              </div>
-            </div>
-          </aside>
+        <div className="text-center">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-widest">
+            <span className="text-military-orange">YOUTUBE</span> OPS COMMAND
+          </h1>
+          <p className="mt-2 text-military-muted font-mono uppercase text-xs tracking-wide">
+            Tactical Content Warfare System v1.0
+          </p>
         </div>
 
-        {/* Response View Modal */}
-        {isResponseViewModalOpen && selectedSavedResponse && (
-          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl bg-military-dark border border-military-border rounded-lg shadow-lg flex flex-col max-h-[85vh]">
-              {/* Modal Header */}
-              <div className="border-b border-military-border p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-mono uppercase tracking-wide text-military-orange">{selectedSavedResponse.title}</h3>
-                  <p className="text-xs text-military-muted mt-1">
-                    {selectedSavedResponse.agent_name} • {selectedSavedResponse.updated_at ? new Date(selectedSavedResponse.updated_at).toLocaleString() : 'Not updated'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsResponseViewModalOpen(false)}
-                  className="text-military-muted hover:text-military-orange transition-colors font-mono text-xs px-4 py-2 border border-military-border hover:border-military-orange rounded uppercase tracking-wide"
-                >
-                  Close
-                </button>
-              </div>
-
-              {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="text-sm font-mono text-military-text whitespace-pre-wrap break-words border border-military-border rounded-md bg-military-dark/70 p-4">
-                  {selectedSavedResponse.content}
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="border-t border-military-border p-4">
-                <div className="flex items-center gap-2 flex-wrap justify-end">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyResponse(selectedSavedResponse.content, selectedSavedResponse.id)}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
-                  >
-                    {copiedResponseId === selectedSavedResponse.id ? (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Copy
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadPDF(
-                      selectedSavedResponse.title,
-                      selectedSavedResponse.content,
-                      selectedSavedResponse.agent_name,
-                      selectedSavedResponse.created_at ?? undefined
-                    )}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRenameValue(selectedSavedResponse.title);
-                      setIsRenameModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Rename
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-red-400 hover:border-red-400 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {isDeleteModalOpen && selectedSavedResponse && (
-          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-military-dark border border-red-500/50 rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-red-400 tracking-wide uppercase mb-4">
-                Delete Saved Response
-              </h3>
-              <p className="text-military-text text-sm mb-2">
-                Are you sure you want to delete <span className="text-military-orange font-semibold">"{selectedSavedResponse.title}"</span>?
-              </p>
-              <p className="text-military-muted text-xs mb-6">
-                This action cannot be undone.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="px-4 py-2 bg-military-dark border border-military-border hover:border-military-green text-military-muted hover:text-military-green rounded-md font-mono text-sm transition-colors uppercase"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteSavedResponse}
-                  disabled={savedResponseStatus === 'saving'}
-                  className="px-4 py-2 bg-red-500/20 border border-red-500 hover:bg-red-500 hover:text-white text-red-400 rounded-md font-mono text-sm font-semibold transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {savedResponseStatus === 'saving' ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Rename Modal */}
-        {isRenameModalOpen && selectedSavedResponse && (
-          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-military-dark border border-military-border rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-military-orange tracking-wide uppercase mb-4">
-                Rename File
-              </h3>
-              <input
-                type="text"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleUpdateSavedResponse(renameValue);
-                    setIsRenameModalOpen(false);
-                  }
-                }}
-                className="w-full bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green font-mono text-sm mb-4"
-                placeholder="Enter new name"
-                autoFocus
-              />
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsRenameModalOpen(false)}
-                  className="px-4 py-2 bg-military-dark border border-military-border hover:border-military-orange text-military-muted hover:text-military-orange rounded-md font-mono text-sm transition-colors uppercase"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleUpdateSavedResponse(renameValue);
-                    setIsRenameModalOpen(false);
-                  }}
-                  className="px-4 py-2 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors uppercase"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Active Agent Chat Interface */}
-        {activeAgent && (
-          <ChatInterface
-            agentId={activeAgent}
-            agentName={agents.find(a => a.id === activeAgent)?.name || ''}
-            agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
-            onClose={() => setActiveAgent(null)}
-            onSubmit={async (userInput) => {
-              return await handleAgentMessage(activeAgent, userInput);
-            }}
-            onSaveResponse={handleSaveChatResponse}
-          />
-        )}
-
-        {/* System Info Footer */}
-        <div className="border-t border-military-border pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-mono text-military-muted">
-            <div className="uppercase tracking-wide">
-              <span className="text-military-orange">System:</span> Operational
-            </div>
-            <div className="uppercase tracking-wide">
-              <span className="text-military-orange">Agents:</span> 6/6 Ready
-            </div>
-            <div className="uppercase tracking-wide">
-              <span className="text-military-orange">Clearance:</span> Top Secret
-            </div>
-          </div>
-        </div>
-      </main>
+        <button
+          onClick={() => router.push('/agents')}
+          className="group inline-flex items-center gap-3 px-8 py-3 rounded-md border border-military-green text-military-dark bg-military-green hover:bg-military-green/90 transition-colors font-mono uppercase tracking-wide text-sm shadow-[0_0_20px_rgba(0,255,65,0.15)]"
+        >
+          <span className="inline-block h-2 w-2 rounded-full bg-military-dark group-hover:scale-110 transition-transform" />
+          Start
+        </button>
+      </div>
     </div>
   );
 }
