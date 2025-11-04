@@ -62,13 +62,23 @@ export default function CommandCenter() {
     return () => clearInterval(interval);
   }, []);
 
-  // If user refreshes this page (type === 'reload'), send them back to splash '/'
+  // Redirect to splash if this page was opened directly or via refresh.
+  // If user came from the Start button, we set a session flag to skip redirect.
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const fromSplash = (() => {
+      try { return sessionStorage.getItem('enteredViaSplash') === '1'; } catch { return false; }
+    })();
+    if (fromSplash) {
+      try { sessionStorage.removeItem('enteredViaSplash'); } catch {}
+      return; // valid navigation via Start
+    }
+
     const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
     const nav = navEntries && navEntries[0];
     const isReload = (nav && nav.type === 'reload') || (performance as any)?.navigation?.type === 1;
-    if (isReload) {
+    const isDirectOpen = document.referrer === '' || new URL(document.referrer).origin !== location.origin;
+    if (isReload || isDirectOpen) {
       router.replace('/');
     }
   }, [router]);

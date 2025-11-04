@@ -333,7 +333,10 @@ export default function CommandCenter() {
         </div>
 
         <button
-          onClick={() => router.push('/agents')}
+          onClick={() => {
+            try { sessionStorage.setItem('enteredViaSplash', '1'); } catch {}
+            router.push('/agents');
+          }}
           className="group inline-flex items-center gap-3 px-8 py-3 rounded-md border border-military-green text-military-dark bg-military-green hover:bg-military-green/90 transition-colors font-mono uppercase tracking-wide text-sm shadow-[0_0_20px_rgba(0,255,65,0.15)]"
         >
           <span className="inline-block h-2 w-2 rounded-full bg-military-dark group-hover:scale-110 transition-transform" />
