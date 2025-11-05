@@ -93,8 +93,7 @@ export default function ScriptGeneratorForm({ onSubmit, isLoading }: ScriptGener
               type="number"
               value={formData.total_words}
               onChange={(e) => setFormData({ ...formData, total_words: parseInt(e.target.value) })}
-              min="500"
-              max="5000"
+              min="100"
               step="100"
               className="w-full bg-military-gray/50 border border-military-green/30 rounded px-4 py-2 text-military-text focus:outline-none focus:border-military-green transition-colors"
             />
