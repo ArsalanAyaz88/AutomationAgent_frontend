@@ -105,9 +105,16 @@ export async function auditTitles(data: TitleAuditRequest): Promise<AgentRespons
 
 // Agent 3: Script Generation
 export interface ScriptGenerationRequest {
-  title_audit_data: string;
   topic: string;
-  user_query?: string;
+  total_words?: number;
+  tone?: string;
+  target_audience?: string;
+  video_duration?: number;
+  include_hook?: boolean;
+  include_cta?: boolean;
+  script_structure?: string;
+  key_points?: string[];
+  additional_instructions?: string;
 }
 
 export async function generateScript(data: ScriptGenerationRequest): Promise<AgentResponse> {

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
 import { formatAgentOutput } from '@/lib/formatters';
 import MarkdownRenderer from './MarkdownRenderer';
+import ScriptGeneratorForm, { ScriptFormData } from './ScriptGeneratorForm';
 
 interface Message {
   role: 'user' | 'agent' | 'system';
@@ -46,7 +47,7 @@ export default function ChatInterface({
 
 Just tell me what you need - I'll figure it out! What would you like to know about YouTube?`,
       2: `${agentName} online! I analyze titles, thumbnails, and hooks. Share video URLs or ask me about what makes titles and thumbnails work.`,
-      3: `${agentName} deployed! I write YouTube scripts. Tell me your topic or ask me about scriptwriting techniques.`,
+      3: '', // No initial message for Agent 3 - form only
       4: `${agentName} active! I convert scripts to visual scene prompts. Paste a script or discuss video production strategies with me.`,
       5: `${agentName} initialized! I generate winning title and thumbnail ideas. Tell me your niche or ask about viral content strategies.`,
       6: `${agentName} ready! I create 30-video content roadmaps. Share your niche or let's discuss content planning strategies.`,
@@ -59,16 +60,19 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
 
 I'll return a clean list of 50 video links with titles. What channel do you need videos from?`
     };
+    // Return message directly without fallback for Agent 3
+    if (agentId === 3) return '';
     return messages[agentId] || `${agentName} ready for deployment.`;
   };
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'system',
-      content: getInitialMessage(agentId, agentName),
+  const initialMessage = getInitialMessage(agentId, agentName);
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessage ? [{
+      role: 'system' as const,
+      content: initialMessage,
       timestamp: new Date()
-    }
-  ]);
+    }] : []
+  );
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -85,8 +89,11 @@ I'll return a clean list of 50 video links with titles. What channel do you need
   }, [messages]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    // Only focus input for agents that have text input (not Agent 3)
+    if (agentId !== 3) {
+      inputRef.current?.focus();
+    }
+  }, [agentId]);
 
   useEffect(() => {
     if (copiedIndex === null) return;
@@ -129,6 +136,48 @@ I'll return a clean list of 50 video links with titles. What channel do you need
       setSaveStatus(prev => ({ ...prev, [index]: 'error' }));
       // Only clear error status after 2 seconds
       scheduleSaveStatusClear(index);
+    }
+  };
+
+  const handleFormSubmit = async (formData: ScriptFormData) => {
+    setIsLoading(true);
+    
+    // Create detailed user message showing all parameters
+    const paramsSummary = [
+      `📝 **Topic:** ${formData.topic}`,
+      `📊 **Words:** ${formData.total_words}`,
+      `🎭 **Tone:** ${formData.tone}`,
+      `👥 **Audience:** ${formData.target_audience}`,
+      formData.video_duration ? `⏱️ **Duration:** ${formData.video_duration} min` : '',
+      `📋 **Structure:** ${formData.script_structure}`,
+      formData.key_points.length > 0 ? `🔑 **Key Points:** ${formData.key_points.join(', ')}` : '',
+      formData.additional_instructions ? `💡 **Notes:** ${formData.additional_instructions}` : ''
+    ].filter(Boolean).join('\n');
+    
+    const userMessage: Message = {
+      role: 'user',
+      content: `**Script Generation Request**\n\n${paramsSummary}`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      const response = await onSubmit('', formData);
+      const agentMessage: Message = {
+        role: response.success ? 'agent' : 'system',
+        content: response.success ? response.result : (response.error || 'An error occurred'),
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, agentMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        role: 'system',
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -201,8 +250,16 @@ I'll return a clean list of 50 video links with titles. What channel do you need
           </button>
         </div>
 
-        {/* Messages Area */}
+        {/* Messages Area - includes form for Agent 3 */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-military-dark/40">
+          {/* Script Generator Form for Agent 3 */}
+          {agentId === 3 && (
+            <div className="mb-6">
+              <ScriptGeneratorForm onSubmit={handleFormSubmit} isLoading={isLoading} />
+            </div>
+          )}
+
+          {/* Chat Messages */}
           {messages.map((message, index) => (
             <div
               key={index}
@@ -332,38 +389,40 @@ I'll return a clean list of 50 video links with titles. What channel do you need
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="border-t border-military-border p-4 bg-military-darker/70">
-          <form onSubmit={handleSubmit} className="flex gap-3">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything about YouTube, share URLs, or request analysis... (Shift+Enter for new line)"
-              disabled={isLoading}
-              rows={3}
-              className="flex-1 bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green resize-none font-mono text-sm disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="px-5 py-3 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-military-green/20 disabled:hover:text-military-text flex items-center gap-2"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  SEND
-                </>
-              )}
-            </button>
-          </form>
-          <p className="text-xs text-military-muted mt-2 font-mono">
-            Press Enter to send · Shift+Enter for new line
-          </p>
-        </div>
+        {/* Input Area - Hidden for Agent 3 (form-based) */}
+        {agentId !== 3 && (
+          <div className="border-t border-military-border p-4 bg-military-darker/70">
+            <form onSubmit={handleSubmit} className="flex gap-3">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask anything about YouTube, share URLs, or request analysis... (Shift+Enter for new line)"
+                disabled={isLoading}
+                rows={3}
+                className="flex-1 bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green resize-none font-mono text-sm disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                className="px-5 py-3 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-military-green/20 disabled:hover:text-military-text flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    SEND
+                  </>
+                )}
+              </button>
+            </form>
+            <p className="text-xs text-military-muted mt-2 font-mono">
+              Press Enter to send · Shift+Enter for new line
+            </p>
+          </div>
+        )}
       </div>
 
       <style jsx global>{`

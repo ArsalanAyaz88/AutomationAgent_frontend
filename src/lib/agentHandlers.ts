@@ -120,16 +120,37 @@ What would you like to know about titles and thumbnails?`,
 }
 
 // Agent 3: Script Writer
-export async function handleScriptWriter(userInput: string, previousData?: string): Promise<AgentResponse> {
-  // Extract topic from user input
+export async function handleScriptWriter(userInput: string, formData?: any): Promise<AgentResponse> {
+  // If formData is provided (from the form), use it directly
+  if (formData && formData.topic) {
+    const response = await generateScript({
+      topic: formData.topic,
+      total_words: formData.total_words,
+      tone: formData.tone,
+      target_audience: formData.target_audience,
+      video_duration: formData.video_duration,
+      include_hook: formData.include_hook,
+      include_cta: formData.include_cta,
+      script_structure: formData.script_structure,
+      key_points: formData.key_points,
+      additional_instructions: formData.additional_instructions
+    });
+    return response;
+  }
+
+  // Fallback: If no formData, extract topic from text input
   const topicMatch = userInput.match(/topic[:\s]+([^\n]+)/i);
   const topic = topicMatch ? topicMatch[1].trim() : userInput;
 
-  // Process the request
+  // Process the request with default values
   const response = await generateScript({
-    title_audit_data: previousData || 'No previous audit data',
     topic: topic,
-    user_query: userInput
+    total_words: 1500,
+    tone: 'conversational',
+    target_audience: 'general',
+    include_hook: true,
+    include_cta: true,
+    script_structure: 'standard'
   });
   
   // If backend fails, provide helpful guidance
@@ -138,23 +159,24 @@ export async function handleScriptWriter(userInput: string, previousData?: strin
       success: true,
       result: `I'm your YouTube script writer! Here's how I can help:
 
-📝 **Script Generation**: Tell me your topic and I'll create:
-- Engaging hooks (first 10 seconds)
-- Clear structure (intro, body, conclusion)
-- Storytelling elements
-- Call-to-actions
-- Time stamps suggestions
+📝 **Script Generation**: Use the form above to customize your script with:
+- Topic (required)
+- Word count target
+- Tone (conversational, professional, casual, energetic)
+- Target audience
+- Video duration
+- Script structure (standard, story-based, tutorial, listicle)
+- Key points to cover
+- Additional instructions
 
 💡 **Scriptwriting Tips**:
 - Hook viewers in first 5 seconds
 - Use pattern interrupts every 30 seconds
 - Tell stories, don't just list facts
-- Include visual cues for editing
+- Natural, conversational flow works best
 - End with clear call-to-action
 
-**Example**: "Generate a script about AI in education" or "topic: how to start a YouTube channel"
-
-What topic would you like a script for?`,
+Fill out the form above to generate a customized script!`,
       error: undefined
     };
   }
@@ -334,7 +356,7 @@ export async function handleAgentMessage(
     case 2:
       return handleTitleAuditor(userInput);
     case 3:
-      return handleScriptWriter(userInput, additionalData?.previousData);
+      return handleScriptWriter(userInput, additionalData);
     case 4:
       return handleSceneDirector(userInput);
     case 5:

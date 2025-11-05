@@ -334,8 +334,17 @@ export default function CommandCenter() {
 
         <button
           onClick={() => {
-            try { sessionStorage.setItem('enteredViaSplash', '1'); } catch {}
-            router.push('/agents');
+            // Set flag before navigation
+            try { 
+              sessionStorage.setItem('enteredViaSplash', '1'); 
+              console.log('Set enteredViaSplash flag');
+            } catch (e) {
+              console.error('Failed to set sessionStorage', e);
+            }
+            // Use a slight delay to ensure sessionStorage is set
+            setTimeout(() => {
+              router.push('/agents');
+            }, 10);
           }}
           className="group inline-flex items-center gap-3 px-8 py-3 rounded-md border border-military-green text-military-dark bg-military-green hover:bg-military-green/90 transition-colors font-mono uppercase tracking-wide text-sm shadow-[0_0_20px_rgba(0,255,65,0.15)]"
         >

@@ -63,25 +63,58 @@ export default function CommandCenter() {
     return () => clearInterval(interval);
   }, []);
 
-  // Redirect to splash if this page was opened directly or via refresh.
-  // If user came from the Start button, we set a session flag to skip redirect.
+  // Redirect logic - DISABLED for easier development access
+  // To enable: uncomment the redirect check below
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // Check if entered via splash
     const fromSplash = (() => {
-      try { return sessionStorage.getItem('enteredViaSplash') === '1'; } catch { return false; }
+      try { 
+        const flag = sessionStorage.getItem('enteredViaSplash');
+        console.log('🔍 Checking enteredViaSplash flag:', flag);
+        return flag === '1';
+      } catch { 
+        console.error('❌ Failed to read sessionStorage');
+        return false; 
+      }
     })();
+    
     if (fromSplash) {
+      console.log('✅ Valid navigation from splash page - allowing access');
       try { sessionStorage.removeItem('enteredViaSplash'); } catch {}
       return; // valid navigation via Start
     }
 
+    // REDIRECT DISABLED - Remove comment below to enable strict redirect
+    console.log('⚠️ Redirect check DISABLED - allowing direct access to /agents');
+    
+    /* UNCOMMENT TO ENABLE REDIRECT:
+    // Check if this is a reload or direct access
     const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
     const nav = navEntries && navEntries[0];
     const isReload = (nav && nav.type === 'reload') || (performance as any)?.navigation?.type === 1;
-    const isDirectOpen = document.referrer === '' || new URL(document.referrer).origin !== location.origin;
+    
+    // Only check referrer if it's not from same origin
+    let isDirectOpen = false;
+    try {
+      if (document.referrer === '') {
+        isDirectOpen = true;
+      } else {
+        const referrerOrigin = new URL(document.referrer).origin;
+        isDirectOpen = referrerOrigin !== window.location.origin;
+      }
+    } catch {
+      isDirectOpen = document.referrer === '';
+    }
+    
+    console.log('Navigation check:', { isReload, isDirectOpen, referrer: document.referrer });
+    
     if (isReload || isDirectOpen) {
+      console.log('🔄 Redirecting to splash page');
       router.replace('/');
     }
+    */
   }, [router]);
 
   useEffect(() => {
@@ -288,7 +321,7 @@ export default function CommandCenter() {
     },
     {
       id: 2,
-      name: 'TITLE AUDITOR',
+      name: 'Video AUDITOR',
       codename: 'AGENT-002',
       icon: FileSearch,
       description: 'Pattern analysis: titles, thumbnails, keywords, hooks',
@@ -697,8 +730,8 @@ export default function CommandCenter() {
             agentName={agents.find(a => a.id === activeAgent)?.name || ''}
             agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
             onClose={() => setActiveAgent(null)}
-            onSubmit={async (userInput) => {
-              return await handleAgentMessage(activeAgent, userInput);
+            onSubmit={async (userInput, formData) => {
+              return await handleAgentMessage(activeAgent, userInput, formData);
             }}
             onSaveResponse={handleSaveChatResponse}
           />
