@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
 import { formatAgentOutput } from '@/lib/formatters';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface Message {
   role: 'user' | 'agent' | 'system';
@@ -224,9 +225,13 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
                     : 'bg-military-orange/10 border border-military-orange/30'
                 }`}
               >
-                <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {message.role === 'agent' ? formatAgentOutput(message.content, agentId) : message.content}
-                </p>
+                {message.role === 'agent' ? (
+                  <MarkdownRenderer content={message.content} />
+                ) : (
+                  <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    {message.content}
+                  </p>
+                )}
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <p className="text-xs text-military-muted font-mono">
                     {message.timestamp.toLocaleTimeString()}
