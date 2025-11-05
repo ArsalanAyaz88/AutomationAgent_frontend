@@ -5,6 +5,7 @@ import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkC
 import { formatAgentOutput } from '@/lib/formatters';
 import MarkdownRenderer from './MarkdownRenderer';
 import ScriptGeneratorForm, { ScriptFormData } from './ScriptGeneratorForm';
+import SceneViewer from './SceneViewer';
 
 interface Message {
   role: 'user' | 'agent' | 'system';
@@ -398,7 +399,11 @@ I'll return a clean list of 50 video links with titles. What channel do you need
                 }`}
               >
                 {message.role === 'agent' ? (
-                  <MarkdownRenderer content={message.content} />
+                  agentId === 4 ? (
+                    <SceneViewer content={message.content} />
+                  ) : (
+                    <MarkdownRenderer content={message.content} />
+                  )
                 ) : (
                   <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
                     {message.content}
