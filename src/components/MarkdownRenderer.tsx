@@ -9,10 +9,10 @@ interface MarkdownRendererProps {
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      className="markdown-content text-military-text text-sm leading-relaxed"
-      components={{
+    <div className="markdown-content text-military-text text-sm leading-relaxed">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
         // Headers
         h1: ({ children }) => (
           <h1 className="text-2xl font-bold text-military-orange mb-3 mt-4 border-b border-military-border pb-2">
@@ -64,16 +64,18 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         },
         
         // Code
-        code: ({ inline, children }) => 
-          inline ? (
-            <code className="bg-military-dark/80 border border-military-border px-1.5 py-0.5 rounded text-military-green font-mono text-xs">
+        code: ({ node, className, children, ...props }: any) => {
+          const isInline = !className;
+          return isInline ? (
+            <code className="bg-military-dark/80 border border-military-border px-1.5 py-0.5 rounded text-military-green font-mono text-xs" {...props}>
               {children}
             </code>
           ) : (
-            <code className="block bg-military-dark border border-military-border p-3 rounded my-2 text-military-green font-mono text-xs overflow-x-auto">
+            <code className="block bg-military-dark border border-military-border p-3 rounded my-2 text-military-green font-mono text-xs overflow-x-auto" {...props}>
               {children}
             </code>
-          ),
+          );
+        },
         
         pre: ({ children }) => (
           <pre className="bg-military-dark border border-military-border p-3 rounded my-2 overflow-x-auto">
@@ -153,8 +155,9 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
           </td>
         ),
       }}
-    >
-      {content}
-    </ReactMarkdown>
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
