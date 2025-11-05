@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Send, Loader2, User, Bot, AlertCircle, Copy, Check, Bookmark, BookmarkCheck, Download } from 'lucide-react';
 import { formatAgentOutput } from '@/lib/formatters';
 import MarkdownRenderer from './MarkdownRenderer';
 import ScriptGeneratorForm, { ScriptFormData } from './ScriptGeneratorForm';
@@ -77,6 +77,7 @@ I'll return a clean list of 50 video links with titles. What channel do you need
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [saveStatus, setSaveStatus] = useState<Record<number, 'saving' | 'saved' | 'error'>>({});
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -106,7 +107,113 @@ I'll return a clean list of 50 video links with titles. What channel do you need
       await navigator.clipboard.writeText(content);
       setCopiedIndex(index);
     } catch (error) {
-      console.error('Clipboard copy failed', error);
+      console.error('Failed to copy', error);
+    }
+  };
+
+  const handleDownloadPDF = async (content: string, index: number) => {
+    try {
+      setDownloadingIndex(index);
+      
+      // Dynamically import jsPDF to reduce bundle size
+      const { jsPDF } = await import('jspdf');
+      
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const maxWidth = pageWidth - 2 * margin;
+      let yPosition = margin;
+      
+      // Add header
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(agentName, margin, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(new Date().toLocaleString(), margin, yPosition);
+      yPosition += 15;
+      
+      // Process markdown content
+      const processMarkdownForPDF = (text: string) => {
+        const lines = text.split('\n');
+        const processed: Array<{text: string, style: 'normal' | 'bold' | 'heading', size: number}> = [];
+        
+        for (const line of lines) {
+          // Handle headings
+          if (line.startsWith('### ')) {
+            processed.push({ text: line.replace(/^### /, ''), style: 'bold', size: 12 });
+            processed.push({ text: '', style: 'normal', size: 11 }); // spacing
+          } else if (line.startsWith('## ')) {
+            processed.push({ text: line.replace(/^## /, ''), style: 'bold', size: 13 });
+            processed.push({ text: '', style: 'normal', size: 11 }); // spacing
+          } else if (line.startsWith('# ')) {
+            processed.push({ text: line.replace(/^# /, ''), style: 'bold', size: 14 });
+            processed.push({ text: '', style: 'normal', size: 11 }); // spacing
+          } else if (line.startsWith('**') && line.endsWith('**')) {
+            // Bold line
+            processed.push({ text: line.replace(/\*\*/g, ''), style: 'bold', size: 11 });
+          } else {
+            // Process inline markdown
+            let processedText = line
+              .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold markers
+              .replace(/\*(.+?)\*/g, '$1') // Remove italic markers
+              .replace(/`(.+?)`/g, '$1') // Remove code markers
+              .replace(/^- /g, '• ') // Convert list markers to bullets
+              .replace(/^✅ /g, '✓ ') // Keep checkmarks
+              .replace(/^❌ /g, '✗ ') // Keep x marks
+              .replace(/^[0-9]+\. /g, (match) => match); // Keep numbered lists
+            
+            processed.push({ text: processedText, style: 'normal', size: 11 });
+          }
+        }
+        
+        return processed;
+      };
+      
+      const processedContent = processMarkdownForPDF(content);
+      
+      // Render processed content
+      for (const item of processedContent) {
+        doc.setFontSize(item.size);
+        doc.setFont('helvetica', item.style === 'bold' || item.style === 'heading' ? 'bold' : 'normal');
+        doc.setTextColor(0);
+        
+        if (item.text === '') {
+          // Empty line for spacing
+          yPosition += 5;
+          continue;
+        }
+        
+        const lineHeight = item.size === 14 ? 10 : item.size === 13 ? 9 : item.size === 12 ? 8 : 7;
+        const lines = doc.splitTextToSize(item.text, maxWidth);
+        
+        for (let i = 0; i < lines.length; i++) {
+          // Check if we need a new page
+          if (yPosition + lineHeight > pageHeight - margin) {
+            doc.addPage();
+            yPosition = margin;
+          }
+          
+          doc.text(lines[i], margin, yPosition);
+          yPosition += lineHeight;
+        }
+      }
+      
+      // Generate filename
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `${agentCodename}_${timestamp}.pdf`;
+      
+      // Download the PDF
+      doc.save(filename);
+      
+    } catch (error) {
+      console.error('Failed to generate PDF', error);
+    } finally {
+      setDownloadingIndex(null);
     }
   };
 
@@ -354,6 +461,28 @@ I'll return a clean list of 50 video links with titles. What channel do you need
                           <>
                             <Bookmark className="h-3 w-3" />
                             Save
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {message.role === 'agent' && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPDF(message.content, index)}
+                        disabled={downloadingIndex === index}
+                        className="inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Download PDF"
+                      >
+                        {downloadingIndex === index ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            PDF
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-3 w-3" />
+                            PDF
                           </>
                         )}
                       </button>
