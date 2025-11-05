@@ -6,6 +6,7 @@ import {
   scriptToPrompts,
   generateIdeas,
   generateRoadmap,
+  fetchFiftyVideos,
   AgentResponse
 } from './api';
 
@@ -282,6 +283,45 @@ What's your niche or content area?`,
   return response;
 }
 
+// 50 Videos Fetcher
+export async function handleFiftyVideosFetcher(userInput: string): Promise<AgentResponse> {
+  const response = await fetchFiftyVideos({
+    input: userInput,
+    user_query: userInput
+  });
+  
+  // If backend fails, provide helpful guidance
+  if (!response.success && response.error?.includes('500')) {
+    return {
+      success: true,
+      result: `I fetch the latest 50 video links from any YouTube channel! Here's what I can do:
+
+🔗 **Link Collection**: Give me any of these and I'll fetch 50 videos:
+- Channel ID (UCxxxxxxxxx)
+- Channel URL (youtube.com/@channelname or /channel/UCxxx)
+- Any video URL from that channel
+- Channel handle (@username)
+
+📊 **What You'll Get**:
+- Latest 50 video links from the channel
+- Video titles for easy reference
+- Clean, copy-friendly format
+- Ready to analyze or use
+
+**Example Inputs**:
+- "https://youtube.com/watch?v=VIDEO_ID"
+- "@mrbeast"
+- "UCxxxxxxxxxxx"
+- "Get videos from Tech Channel"
+
+What channel would you like video links from?`,
+      error: undefined
+    };
+  }
+  
+  return response;
+}
+
 // Main handler that routes to specific agent
 export async function handleAgentMessage(
   agentId: number,
@@ -301,6 +341,8 @@ export async function handleAgentMessage(
       return handleIdeasGenerator(userInput, additionalData?.winningData);
     case 6:
       return handleRoadmapStrategist(userInput);
+    case 7:
+      return handleFiftyVideosFetcher(userInput);
     default:
       return {
         success: false,

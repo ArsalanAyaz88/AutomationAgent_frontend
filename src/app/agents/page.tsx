@@ -30,7 +30,8 @@ import {
   Trash2,
   Copy,
   Download,
-  Check
+  Check,
+  Link
 } from 'lucide-react';
 
 export default function CommandCenter() {
@@ -327,6 +328,15 @@ export default function CommandCenter() {
       codename: 'AGENT-006',
       icon: Map,
       description: '30-video tactical roadmap with title/thumbnail variants',
+      status: 'READY',
+      color: 'text-military-green'
+    },
+    {
+      id: 7,
+      name: '50 VIDEOS FETCHER',
+      codename: 'AGENT-007',
+      icon: Link,
+      description: 'Fetch latest 50 video links from any YouTube channel',
       status: 'READY',
       color: 'text-military-green'
     },

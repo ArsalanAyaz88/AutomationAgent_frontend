@@ -49,7 +49,15 @@ Just tell me what you need - I'll figure it out! What would you like to know abo
       3: `${agentName} deployed! I write YouTube scripts. Tell me your topic or ask me about scriptwriting techniques.`,
       4: `${agentName} active! I convert scripts to visual scene prompts. Paste a script or discuss video production strategies with me.`,
       5: `${agentName} initialized! I generate winning title and thumbnail ideas. Tell me your niche or ask about viral content strategies.`,
-      6: `${agentName} ready! I create 30-video content roadmaps. Share your niche or let's discuss content planning strategies.`
+      6: `${agentName} ready! I create 30-video content roadmaps. Share your niche or let's discuss content planning strategies.`,
+      7: `${agentName} deployed! 🔗 I fetch the latest 50 video links from any channel. Give me:
+
+✅ Channel ID (UCxxxxxxxxx)
+✅ Channel URL (@channelname or /channel/)
+✅ Any video URL (I'll find the channel)
+✅ Channel handle (@username)
+
+I'll return a clean list of 50 video links with titles. What channel do you need videos from?`
     };
     return messages[agentId] || `${agentName} ready for deployment.`;
   };

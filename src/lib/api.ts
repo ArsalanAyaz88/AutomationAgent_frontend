@@ -209,6 +209,32 @@ export async function generateRoadmap(data: RoadmapGenerationRequest): Promise<A
   }
 }
 
+// 50 Videos Fetcher
+export interface FiftyVideosRequest {
+  input: string;
+  user_query?: string;
+}
+
+export async function fetchFiftyVideos(data: FiftyVideosRequest): Promise<AgentResponse> {
+  try {
+    const response = await fetch(`${API_BASE}/api/fifty-videos/fetch-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    return {
+      success: false,
+      result: '',
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}
+
 // Health Check
 export interface HealthStatus {
   status: string;
