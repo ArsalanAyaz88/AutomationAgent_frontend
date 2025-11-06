@@ -69,6 +69,8 @@ export default function AnalyticsDashboard() {
   const [showChannelForm, setShowChannelForm] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
   const [newChannelNote, setNewChannelNote] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [channelToDelete, setChannelToDelete] = useState<TrackedChannel | null>(null);
 
   // Strip markdown formatting to get clean plain text
   const stripMarkdown = (text: string): string => {
@@ -244,21 +246,28 @@ export default function AnalyticsDashboard() {
     setTimeout(() => setSuccess(''), 3000);
   };
 
-  // Delete a channel
-  const handleDeleteChannel = async (channelId: string) => {
-    if (!confirm('Are you sure you want to remove this channel?')) return;
+  // Show delete confirmation modal
+  const handleDeleteChannel = (channel: TrackedChannel) => {
+    setChannelToDelete(channel);
+    setShowDeleteConfirm(true);
+  };
+
+  // Confirm and delete channel
+  const confirmDelete = async () => {
+    if (!channelToDelete) return;
     
     setLoading(true);
     setError('');
     setSuccess('');
+    setShowDeleteConfirm(false);
     
     try {
-      await deleteChannel(channelId);
+      await deleteChannel(channelToDelete._id);
       setSuccess('✅ Channel removed successfully');
       
       // If deleted channel was selected, select first remaining channel
-      if (selectedChannel?.channel_id === channelId) {
-        const remaining = trackedChannels.filter(c => c.channel_id !== channelId);
+      if (selectedChannel?._id === channelToDelete._id) {
+        const remaining = trackedChannels.filter(c => c._id !== channelToDelete._id);
         setSelectedChannel(remaining.length > 0 ? remaining[0] : null);
       }
       
@@ -268,7 +277,14 @@ export default function AnalyticsDashboard() {
       setError(err.message || 'Failed to delete channel');
     } finally {
       setLoading(false);
+      setChannelToDelete(null);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setChannelToDelete(null);
   };
 
   // Refresh channel analytics
@@ -747,7 +763,7 @@ export default function AnalyticsDashboard() {
                                 🔄 Refresh
                               </button>
                               <button
-                                onClick={() => handleDeleteChannel(channel._id)}
+                                onClick={() => handleDeleteChannel(channel)}
                                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold whitespace-nowrap"
                               >
                                 🗑️ Delete
@@ -1334,6 +1350,82 @@ export default function AnalyticsDashboard() {
               )}
             </div>
           </>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && channelToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-6 animate-scale-in">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <span className="text-2xl">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Delete Channel?</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
+                </div>
+              </div>
+
+              {/* Channel Info */}
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={channelToDelete.thumbnail}
+                    alt={channelToDelete.channel_title}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {channelToDelete.channel_title}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {channelToDelete.subscriber_count.toLocaleString()} subscribers
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning Message */}
+              <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  <strong>⚠️ Warning:</strong> This will permanently delete:
+                </p>
+                <ul className="mt-2 text-sm text-red-700 dark:text-red-300 space-y-1 ml-4">
+                  <li>• Channel data</li>
+                  <li>• All analytics history</li>
+                  <li>• Top videos information</li>
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelDelete}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      🗑️ Delete
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
