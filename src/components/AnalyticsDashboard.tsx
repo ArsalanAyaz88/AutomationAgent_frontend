@@ -24,7 +24,7 @@ type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'roadma
 
 export default function AnalyticsDashboard() {
   // State management
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('channels');
   const [channelUrl, setChannelUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -187,8 +187,24 @@ export default function AnalyticsDashboard() {
       ]);
       setAnalyticsStatus(status);
       setTrackedChannels(channels.channels);
-      if (channels.channels.length > 0) {
-        setSelectedChannel(channels.channels[0]);
+      
+      // Try to restore selected channel from localStorage
+      const savedChannelId = localStorage.getItem('selectedChannelId');
+      let channelToSelect = null;
+      
+      if (savedChannelId && channels.channels.length > 0) {
+        // Find the saved channel
+        channelToSelect = channels.channels.find(c => c._id === savedChannelId);
+      }
+      
+      // If not found or no saved channel, use first one
+      if (!channelToSelect && channels.channels.length > 0) {
+        channelToSelect = channels.channels[0];
+      }
+      
+      if (channelToSelect) {
+        setSelectedChannel(channelToSelect);
+        localStorage.setItem('selectedChannelId', channelToSelect._id);
       }
     } catch (err: any) {
       console.error('Failed to load data:', err);
@@ -242,6 +258,7 @@ export default function AnalyticsDashboard() {
   // Select a channel as active
   const handleSelectChannel = (channel: TrackedChannel) => {
     setSelectedChannel(channel);
+    localStorage.setItem('selectedChannelId', channel._id);
     setSuccess(`✅ Now using: ${channel.channel_title}`);
     setTimeout(() => setSuccess(''), 3000);
   };
@@ -268,7 +285,15 @@ export default function AnalyticsDashboard() {
       // If deleted channel was selected, select first remaining channel
       if (selectedChannel?._id === channelToDelete._id) {
         const remaining = trackedChannels.filter(c => c._id !== channelToDelete._id);
-        setSelectedChannel(remaining.length > 0 ? remaining[0] : null);
+        const newSelected = remaining.length > 0 ? remaining[0] : null;
+        setSelectedChannel(newSelected);
+        
+        // Update localStorage
+        if (newSelected) {
+          localStorage.setItem('selectedChannelId', newSelected._id);
+        } else {
+          localStorage.removeItem('selectedChannelId');
+        }
       }
       
       // Reload channels list
