@@ -27,7 +27,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://automation-agent-backend.vercel.app' 
     : 'http://localhost:8000');
 
-type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'scriptToScene' | 'roadmap';
+type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap';
 
 export default function AnalyticsDashboard() {
   // State management
@@ -35,7 +35,7 @@ export default function AnalyticsDashboard() {
     if (typeof window !== 'undefined') {
       // Restore saved tab from localStorage, default to 'channels' for first visit
       const savedTab = window.localStorage.getItem('activeTab');
-      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'scriptToScene', 'roadmap'].includes(savedTab)) {
+      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'roadmap'].includes(savedTab)) {
         return savedTab as TabType;
       }
     }
@@ -74,20 +74,6 @@ export default function AnalyticsDashboard() {
   const [roadmapVideos, setRoadmapVideos] = useState(30);
   const [roadmapDays, setRoadmapDays] = useState(90);
 
-  // Chatbot states
-  interface ChatMessage {
-    role: 'user' | 'assistant';
-    content: string;
-  }
-  
-  const [scriptwriterSessionId, setScriptwriterSessionId] = useState<string | null>(null);
-  const [scriptwriterMessages, setScriptwriterMessages] = useState<ChatMessage[]>([]);
-  const [scriptwriterInput, setScriptwriterInput] = useState('');
-  
-  const [sceneWriterSessionId, setSceneWriterSessionId] = useState<string | null>(null);
-  const [sceneWriterMessages, setSceneWriterMessages] = useState<ChatMessage[]>([]);
-  const [sceneWriterInput, setSceneWriterInput] = useState('');
-
   // Copy/Download state
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedIdeas, setCopiedIdeas] = useState(false);
@@ -101,6 +87,16 @@ export default function AnalyticsDashboard() {
   const [newChannelNote, setNewChannelNote] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<TrackedChannel | null>(null);
+
+  // Scriptwriter chatbot state
+  const [scriptwriterInput, setScriptwriterInput] = useState('');
+  const [scriptwriterMessages, setScriptwriterMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [scriptwriterSessionId, setScriptwriterSessionId] = useState<string | null>(null);
+
+  // Scene Writer chatbot state
+  const [sceneWriterInput, setSceneWriterInput] = useState('');
+  const [sceneWriterMessages, setSceneWriterMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [sceneWriterSessionId, setSceneWriterSessionId] = useState<string | null>(null);
 
   // Strip markdown formatting to get clean plain text
   const stripMarkdown = (text: string): string => {
@@ -709,7 +705,6 @@ export default function AnalyticsDashboard() {
                   
                   { id: 'ideas', icon: '💡', label: 'Video Ideas' },
                   { id: 'titles', icon: '📌', label: 'Title Generator' },
-                  { id: 'scriptToScene', icon: '🎬', label: 'Script to Scene' },
                   { id: 'roadmap', icon: '🗺️', label: 'Content Roadmap' },
                 ].map((tab) => (
                   <button
@@ -1472,163 +1467,6 @@ export default function AnalyticsDashboard() {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Script to Scene Tab */}
-              {activeTab === 'scriptToScene' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold">🎬 AI Scriptwriting & Scene Design Studio</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Chat with AI assistants for scriptwriting and scene creation, or upload scripts to convert
-                  </p>
-
-                  {/* Scriptwriter Chatbot */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-700">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold">📝 The Storyteller - Scriptwriter AI</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Chat naturally • Generate scripts • Get tips • Context-aware
-                        </p>
-                      </div>
-                      <button
-                        onClick={clearScriptwriterChat}
-                        className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
-                      >
-                        🗑️ Clear
-                      </button>
-                    </div>
-
-                    {/* Chat Messages */}
-                    <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 h-96 overflow-y-auto border border-gray-200 dark:border-gray-700">
-                      {scriptwriterMessages.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-gray-400">
-                          <div className="text-center">
-                            <p className="text-lg mb-2">💬 Start a conversation!</p>
-                            <p className="text-sm">Try: "Write a script about AI" or "What makes a good hook?"</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {scriptwriterMessages.map((msg, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-[80%] p-3 rounded-lg ${
-                                  msg.role === 'user'
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                                }`}
-                              >
-                                <div className="prose prose-sm dark:prose-invert max-w-none">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {msg.content}
-                                  </ReactMarkdown>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Input */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={scriptwriterInput}
-                        onChange={(e) => setScriptwriterInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendScriptwriterMessage()}
-                        placeholder="Message The Storyteller..."
-                        className="flex-1 px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        disabled={loading}
-                      />
-                      <button
-                        onClick={sendScriptwriterMessage}
-                        disabled={loading || !scriptwriterInput.trim()}
-                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                      >
-                        {loading ? '⏳' : '📤'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Scene Writer Chatbot */}
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-700">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold">🎥 The Director - Scene Designer AI</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Visual storytelling • Scene breakdowns • Cinematography tips
-                        </p>
-                      </div>
-                      <button
-                        onClick={clearSceneWriterChat}
-                        className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
-                      >
-                        🗑️ Clear
-                      </button>
-                    </div>
-
-                    {/* Chat Messages */}
-                    <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 h-96 overflow-y-auto border border-gray-200 dark:border-gray-700">
-                      {sceneWriterMessages.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-gray-400">
-                          <div className="text-center">
-                            <p className="text-lg mb-2">🎬 Ready to create scenes!</p>
-                            <p className="text-sm">Try: "Explain wide shots" or "Convert my script to scenes"</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {sceneWriterMessages.map((msg, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-[80%] p-3 rounded-lg ${
-                                  msg.role === 'user'
-                                    ? 'bg-purple-500 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                                }`}
-                              >
-                                <div className="prose prose-sm dark:prose-invert max-w-none">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {msg.content}
-                                  </ReactMarkdown>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Input */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={sceneWriterInput}
-                        onChange={(e) => setSceneWriterInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendSceneWriterMessage()}
-                        placeholder="Message The Director..."
-                        className="flex-1 px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        disabled={loading}
-                      />
-                      <button
-                        onClick={sendSceneWriterMessage}
-                        disabled={loading || !sceneWriterInput.trim()}
-                        className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
-                      >
-                        {loading ? '⏳' : '📤'}
-                      </button>
-                    </div>
-                  </div>
-
                 </div>
               )}
             </div>
