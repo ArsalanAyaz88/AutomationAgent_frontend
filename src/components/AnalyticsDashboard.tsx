@@ -21,6 +21,12 @@ import {
   type UnifiedResponse,
 } from '@/services/channelAnalytics';
 
+// API Base URL for backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://automation-agent-backend.vercel.app' 
+    : 'http://localhost:8000');
+
 type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'scriptToScene' | 'roadmap';
 
 export default function AnalyticsDashboard() {
@@ -470,7 +476,7 @@ export default function AnalyticsDashboard() {
   // Script to Scene handlers
   const fetchScripts = async () => {
     try {
-      const response = await fetch('/api/unified/get-scripts?user_id=default');
+      const response = await fetch(`${API_BASE_URL}/api/unified/get-scripts?user_id=default`);
       const data = await response.json();
       if (data.success) {
         setUploadedScripts(data.scripts || []);
@@ -491,7 +497,7 @@ export default function AnalyticsDashboard() {
       formData.append('file', file);
       formData.append('user_id', 'default');
 
-      const response = await fetch('/api/unified/upload-script-pdf?user_id=default', {
+      const response = await fetch(`${API_BASE_URL}/api/unified/upload-script-pdf?user_id=default`, {
         method: 'POST',
         body: formData,
       });
@@ -515,7 +521,7 @@ export default function AnalyticsDashboard() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/unified/upload-script-text', {
+      const response = await fetch(`${API_BASE_URL}/api/unified/upload-script-text`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -546,7 +552,7 @@ export default function AnalyticsDashboard() {
     setError('');
     setSceneResponse(null);
     try {
-      const response = await fetch('/api/unified/script-to-scene', {
+      const response = await fetch(`${API_BASE_URL}/api/unified/script-to-scene`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -574,7 +580,7 @@ export default function AnalyticsDashboard() {
     if (!confirm('Delete this script?')) return;
     setLoading(true);
     try {
-      const response = await fetch(`/api/unified/delete-script/${scriptId}?user_id=default`, {
+      const response = await fetch(`${API_BASE_URL}/api/unified/delete-script/${scriptId}?user_id=default`, {
         method: 'DELETE',
       });
 
