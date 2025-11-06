@@ -63,10 +63,62 @@ export default function AnalyticsDashboard() {
   const [copiedTitles, setCopiedTitles] = useState(false);
   const [copiedRoadmap, setCopiedRoadmap] = useState(false);
 
+  // Strip markdown formatting to get clean plain text
+  const stripMarkdown = (text: string): string => {
+    let cleanText = text;
+    
+    // Remove bold (**text** or __text__)
+    cleanText = cleanText.replace(/\*\*(.+?)\*\*/g, '$1');
+    cleanText = cleanText.replace(/__(.+?)__/g, '$1');
+    
+    // Remove italic (*text* or _text_)
+    cleanText = cleanText.replace(/\*(.+?)\*/g, '$1');
+    cleanText = cleanText.replace(/_(.+?)_/g, '$1');
+    
+    // Remove strikethrough (~~text~~)
+    cleanText = cleanText.replace(/~~(.+?)~~/g, '$1');
+    
+    // Remove headings (# ## ### etc)
+    cleanText = cleanText.replace(/^#{1,6}\s+/gm, '');
+    
+    // Remove horizontal rules (--- or ***)
+    cleanText = cleanText.replace(/^(-{3,}|\*{3,}|_{3,})$/gm, '');
+    
+    // Remove links but keep text [text](url)
+    cleanText = cleanText.replace(/\[(.+?)\]\(.+?\)/g, '$1');
+    
+    // Remove images ![alt](url)
+    cleanText = cleanText.replace(/!\[.+?\]\(.+?\)/g, '');
+    
+    // Remove inline code (`code`)
+    cleanText = cleanText.replace(/`(.+?)`/g, '$1');
+    
+    // Remove code blocks (```code```)
+    cleanText = cleanText.replace(/```[\s\S]*?```/g, '');
+    
+    // Remove blockquotes (> text)
+    cleanText = cleanText.replace(/^>\s+/gm, '');
+    
+    // Clean up list markers (-, *, +)
+    cleanText = cleanText.replace(/^[\s]*[-*+]\s+/gm, '• ');
+    
+    // Clean up numbered lists (1. text)
+    cleanText = cleanText.replace(/^[\s]*\d+\.\s+/gm, '');
+    
+    // Remove HTML tags
+    cleanText = cleanText.replace(/<[^>]*>/g, '');
+    
+    // Clean up extra whitespace
+    cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
+    
+    return cleanText.trim();
+  };
+
   // Copy to clipboard function
   const copyToClipboard = async (text: string, setCopied: (val: boolean) => void) => {
     try {
-      await navigator.clipboard.writeText(text);
+      const cleanText = stripMarkdown(text);
+      await navigator.clipboard.writeText(cleanText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -77,6 +129,8 @@ export default function AnalyticsDashboard() {
   // Download as PDF function
   const downloadAsPDF = (content: string, filename: string) => {
     try {
+      const cleanContent = stripMarkdown(content);
+      
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -93,7 +147,7 @@ export default function AnalyticsDashboard() {
       doc.setFont('helvetica', 'normal');
       
       // Split content into lines
-      const lines = doc.splitTextToSize(content, maxWidth);
+      const lines = doc.splitTextToSize(cleanContent, maxWidth);
       let y = margin + 10;
       
       lines.forEach((line: string) => {

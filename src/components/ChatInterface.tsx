@@ -103,9 +103,61 @@ I'll return a clean list of 50 video links with titles. What channel do you need
     return () => clearTimeout(timeout);
   }, [copiedIndex]);
 
+  // Strip markdown formatting to get clean plain text
+  const stripMarkdown = (text: string): string => {
+    let cleanText = text;
+    
+    // Remove bold (**text** or __text__)
+    cleanText = cleanText.replace(/\*\*(.+?)\*\*/g, '$1');
+    cleanText = cleanText.replace(/__(.+?)__/g, '$1');
+    
+    // Remove italic (*text* or _text_)
+    cleanText = cleanText.replace(/\*(.+?)\*/g, '$1');
+    cleanText = cleanText.replace(/_(.+?)_/g, '$1');
+    
+    // Remove strikethrough (~~text~~)
+    cleanText = cleanText.replace(/~~(.+?)~~/g, '$1');
+    
+    // Remove headings (# ## ### etc)
+    cleanText = cleanText.replace(/^#{1,6}\s+/gm, '');
+    
+    // Remove horizontal rules (--- or ***)
+    cleanText = cleanText.replace(/^(-{3,}|\*{3,}|_{3,})$/gm, '');
+    
+    // Remove links but keep text [text](url)
+    cleanText = cleanText.replace(/\[(.+?)\]\(.+?\)/g, '$1');
+    
+    // Remove images ![alt](url)
+    cleanText = cleanText.replace(/!\[.+?\]\(.+?\)/g, '');
+    
+    // Remove inline code (`code`)
+    cleanText = cleanText.replace(/`(.+?)`/g, '$1');
+    
+    // Remove code blocks (```code```)
+    cleanText = cleanText.replace(/```[\s\S]*?```/g, '');
+    
+    // Remove blockquotes (> text)
+    cleanText = cleanText.replace(/^>\s+/gm, '');
+    
+    // Clean up list markers (-, *, +)
+    cleanText = cleanText.replace(/^[\s]*[-*+]\s+/gm, '• ');
+    
+    // Clean up numbered lists (1. text)
+    cleanText = cleanText.replace(/^[\s]*\d+\.\s+/gm, '');
+    
+    // Remove HTML tags
+    cleanText = cleanText.replace(/<[^>]*>/g, '');
+    
+    // Clean up extra whitespace
+    cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
+    
+    return cleanText.trim();
+  };
+
   const handleCopy = async (content: string, index: number) => {
     try {
-      await navigator.clipboard.writeText(content);
+      const cleanText = stripMarkdown(content);
+      await navigator.clipboard.writeText(cleanText);
       setCopiedIndex(index);
     } catch (error) {
       console.error('Failed to copy', error);
@@ -138,70 +190,26 @@ I'll return a clean list of 50 video links with titles. What channel do you need
       doc.text(new Date().toLocaleString(), margin, yPosition);
       yPosition += 15;
       
-      // Process markdown content
-      const processMarkdownForPDF = (text: string) => {
-        const lines = text.split('\n');
-        const processed: Array<{text: string, style: 'normal' | 'bold' | 'heading', size: number}> = [];
-        
-        for (const line of lines) {
-          // Handle headings
-          if (line.startsWith('### ')) {
-            processed.push({ text: line.replace(/^### /, ''), style: 'bold', size: 12 });
-            processed.push({ text: '', style: 'normal', size: 11 }); // spacing
-          } else if (line.startsWith('## ')) {
-            processed.push({ text: line.replace(/^## /, ''), style: 'bold', size: 13 });
-            processed.push({ text: '', style: 'normal', size: 11 }); // spacing
-          } else if (line.startsWith('# ')) {
-            processed.push({ text: line.replace(/^# /, ''), style: 'bold', size: 14 });
-            processed.push({ text: '', style: 'normal', size: 11 }); // spacing
-          } else if (line.startsWith('**') && line.endsWith('**')) {
-            // Bold line
-            processed.push({ text: line.replace(/\*\*/g, ''), style: 'bold', size: 11 });
-          } else {
-            // Process inline markdown
-            let processedText = line
-              .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold markers
-              .replace(/\*(.+?)\*/g, '$1') // Remove italic markers
-              .replace(/`(.+?)`/g, '$1') // Remove code markers
-              .replace(/^- /g, '• ') // Convert list markers to bullets
-              .replace(/^✅ /g, '✓ ') // Keep checkmarks
-              .replace(/^❌ /g, '✗ ') // Keep x marks
-              .replace(/^[0-9]+\. /g, (match) => match); // Keep numbered lists
-            
-            processed.push({ text: processedText, style: 'normal', size: 11 });
-          }
-        }
-        
-        return processed;
-      };
+      // Clean markdown content
+      const cleanContent = stripMarkdown(content);
       
-      const processedContent = processMarkdownForPDF(content);
+      // Content
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0);
       
-      // Render processed content
-      for (const item of processedContent) {
-        doc.setFontSize(item.size);
-        doc.setFont('helvetica', item.style === 'bold' || item.style === 'heading' ? 'bold' : 'normal');
-        doc.setTextColor(0);
-        
-        if (item.text === '') {
-          // Empty line for spacing
-          yPosition += 5;
-          continue;
+      // Split content into lines and render
+      const lines = doc.splitTextToSize(cleanContent, maxWidth);
+      
+      for (const line of lines) {
+        // Check if we need a new page
+        if (yPosition + 7 > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
         }
         
-        const lineHeight = item.size === 14 ? 10 : item.size === 13 ? 9 : item.size === 12 ? 8 : 7;
-        const lines = doc.splitTextToSize(item.text, maxWidth);
-        
-        for (let i = 0; i < lines.length; i++) {
-          // Check if we need a new page
-          if (yPosition + lineHeight > pageHeight - margin) {
-            doc.addPage();
-            yPosition = margin;
-          }
-          
-          doc.text(lines[i], margin, yPosition);
-          yPosition += lineHeight;
-        }
+        doc.text(line, margin, yPosition);
+        yPosition += 7;
       }
       
       // Generate filename
