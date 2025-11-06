@@ -1212,6 +1212,14 @@ export default function AnalyticsDashboard() {
                     </div>
                   )}
 
+                  {/* Video Analytics Display - AI Data Source */}
+                  {ideasResponse?.video_analytics && ideasResponse?.channel_info && (
+                    <VideoAnalyticsDisplay
+                      videoAnalytics={ideasResponse.video_analytics}
+                      channelTitle={ideasResponse.channel_info.channel_title}
+                    />
+                  )}
+
                   <form onSubmit={handleGenerateIdeas} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1282,14 +1290,6 @@ export default function AnalyticsDashboard() {
                           {ideasResponse.result}
                         </ReactMarkdown>
                       </div>
-
-                      {/* Video Analytics Display */}
-                      {ideasResponse.video_analytics && ideasResponse.channel_info && (
-                        <VideoAnalyticsDisplay
-                          videoAnalytics={ideasResponse.video_analytics}
-                          channelTitle={ideasResponse.channel_info.channel_title}
-                        />
-                      )}
                     </div>
                   )}
                 </div>
