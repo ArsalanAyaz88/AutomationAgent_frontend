@@ -191,8 +191,9 @@ export async function generateIdeas(data: IdeasGenerationRequest): Promise<Agent
 
 // Agent 6: Roadmap Generation
 export interface RoadmapGenerationRequest {
-  niche: string;
+  niche?: string;
   winning_data?: string;
+  channel_input?: string;
   user_query?: string;
 }
 
