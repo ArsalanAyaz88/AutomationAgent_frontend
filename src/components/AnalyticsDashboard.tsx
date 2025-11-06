@@ -1109,6 +1109,105 @@ export default function AnalyticsDashboard() {
                     </div>
                   )}
 
+                  {/* Channel Analytics Summary (shown when channel_info is available) */}
+                  {ideasResponse?.channel_info && (
+                    <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-lg">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                          <span className="text-2xl">📊</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                            Channel Analytics Summary
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Real-time data powering your AI recommendations
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">📺</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Channel</span>
+                          </div>
+                          <p className="text-lg font-bold text-gray-900 dark:text-white truncate" title={ideasResponse.channel_info.channel_title}>
+                            {ideasResponse.channel_info.channel_title}
+                          </p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">👥</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Subscribers</span>
+                          </div>
+                          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                            {ideasResponse.channel_info.subscribers.toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">📹</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Total Videos</span>
+                          </div>
+                          <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {ideasResponse.channel_info.video_count.toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">👁️</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Avg Views</span>
+                          </div>
+                          <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                            {ideasResponse.channel_info.avg_views ? Math.round(ideasResponse.channel_info.avg_views).toLocaleString() : 'N/A'}
+                          </p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">💎</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Avg Engagement</span>
+                          </div>
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                            {ideasResponse.channel_info.avg_engagement ? (ideasResponse.channel_info.avg_engagement * 100).toFixed(2) + '%' : 'N/A'}
+                          </p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">🔄</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Last Updated</span>
+                          </div>
+                          <p className="text-sm font-bold text-gray-600 dark:text-gray-400">
+                            {ideasResponse.channel_info.last_updated 
+                              ? new Date(ideasResponse.channel_info.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                              : 'Just now'}
+                          </p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">✨</span>
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">AI Status</span>
+                          </div>
+                          <p className="text-sm font-bold text-green-600 dark:text-green-400">
+                            {ideasResponse.analytics_used ? '✓ Analytics Active' : '○ Generic Mode'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                        <p className="text-xs text-purple-800 dark:text-purple-200">
+                          <strong>💡 How This Helps:</strong> AI analyzes your channel's performance metrics to generate personalized video ideas that match your proven success patterns. The more data available, the better the recommendations!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleGenerateIdeas} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>

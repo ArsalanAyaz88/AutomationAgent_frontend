@@ -228,6 +228,8 @@ export interface UnifiedResponse {
   };
   video_analytics?: {
     total_videos_analyzed: number;
+    videos_shown: number;
+    showing_all: boolean;
     avg_views: number;
     avg_engagement: number;
     top_performing_videos: VideoAnalyticsData[];

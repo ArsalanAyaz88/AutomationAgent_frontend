@@ -6,6 +6,8 @@ import { VideoAnalyticsData } from '@/services/channelAnalytics';
 interface VideoAnalyticsDisplayProps {
   videoAnalytics: {
     total_videos_analyzed: number;
+    videos_shown: number;
+    showing_all: boolean;
     avg_views: number;
     avg_engagement: number;
     top_performing_videos: VideoAnalyticsData[];
@@ -95,7 +97,7 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
                   : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              🔥 Top {videoAnalytics.top_performing_videos.length} by Views
+              🔥 {videoAnalytics.showing_all ? 'All' : `Top ${videoAnalytics.videos_shown}`} by Views
             </button>
             <button
               onClick={() => setActiveTab('high_engagement')}
@@ -105,7 +107,7 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
                   : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              💎 Top {videoAnalytics.high_engagement_videos.length} by Engagement
+              💎 {videoAnalytics.showing_all ? 'All' : `Top ${videoAnalytics.videos_shown}`} by Engagement
             </button>
           </div>
 
@@ -173,7 +175,7 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
           {/* Info Footer */}
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>💡 How AI Uses This Data:</strong> The AI analyzes these {videoAnalytics.total_videos_analyzed} videos to understand what works for <strong>{channelTitle}</strong>. It looks for patterns in titles, topics, engagement rates, and view counts to generate recommendations that match your channel's proven success formula.
+              <strong>💡 How AI Uses This Data:</strong> The AI analyzes {videoAnalytics.showing_all ? `all ${videoAnalytics.total_videos_analyzed}` : `these ${videoAnalytics.total_videos_analyzed}`} videos to understand what works for <strong>{channelTitle}</strong>. {videoAnalytics.showing_all ? 'Showing all available videos since the channel has fewer than 30 videos.' : `Showing top ${videoAnalytics.videos_shown} performers by views and engagement.`} It looks for patterns in titles, topics, engagement rates, and view counts to generate recommendations that match your channel's proven success formula.
             </p>
           </div>
         </div>
