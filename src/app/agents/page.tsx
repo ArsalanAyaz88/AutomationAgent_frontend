@@ -31,14 +31,13 @@ import {
   Copy,
   Download,
   Check,
-  Link,
-  Brain
+  Link
 } from 'lucide-react';
 
-export default function CommandCenter() {
+export default function AgentsPage() {
   const router = useRouter();
   const [activeAgent, setActiveAgent] = useState<number | null>(null);
-  const [missionTime, setMissionTime] = useState<string>(new Date().toLocaleTimeString());
+  const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleTimeString());
   const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [savedResponses, setSavedResponses] = useState<SavedResponseSummary[]>([]);
   const [selectedSavedResponseId, setSelectedSavedResponseId] = useState<string | null>(null);
@@ -120,7 +119,7 @@ export default function CommandCenter() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setMissionTime(new Date().toLocaleTimeString());
+      setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -313,466 +312,382 @@ export default function CommandCenter() {
   const agents = [
     {
       id: 1,
-      name: 'CHANNEL AUDITOR',
-      codename: 'AGENT-001',
+      name: 'Channel Auditor',
+      codename: 'Agent 1',
       icon: Target,
-      description: 'Deep channel reconnaissance to identify high-value targets',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Analyze and audit YouTube channels for insights',
+      status: 'Ready'
     },
     {
       id: 2,
-      name: 'Video AUDITOR',
-      codename: 'AGENT-002',
+      name: 'Video Auditor',
+      codename: 'Agent 2',
       icon: FileSearch,
-      description: 'Pattern analysis: titles, thumbnails, keywords, hooks',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Analyze video titles, thumbnails, and keywords',
+      status: 'Ready'
     },
     {
       id: 3,
-      name: 'SCRIPT WRITER',
-      codename: 'AGENT-003',
+      name: 'Script Writer',
+      codename: 'Agent 3',
       icon: FileText,
-      description: 'Generate tactical content scripts from intelligence data',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Generate content scripts based on analytics',
+      status: 'Ready'
     },
     {
       id: 4,
-      name: 'SCENE DIRECTOR',
-      codename: 'AGENT-004',
+      name: 'Scene Director',
+      codename: 'Agent 4',
       icon: Camera,
-      description: 'Script-to-scene conversion with cinematic precision',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Convert scripts into detailed scene breakdowns',
+      status: 'Ready'
     },
     {
       id: 5,
-      name: 'IDEAS GENERATOR',
-      codename: 'AGENT-005',
+      name: 'Ideas Generator',
+      codename: 'Agent 5',
       icon: Lightbulb,
-      description: 'Generate 3 winning titles + thumbnail battle plans',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Generate video ideas with titles and thumbnails',
+      status: 'Ready'
     },
     {
       id: 6,
-      name: 'ROADMAP STRATEGIST',
-      codename: 'AGENT-006',
+      name: 'Roadmap Strategist',
+      codename: 'Agent 6',
       icon: Map,
-      description: '30-video tactical roadmap with title/thumbnail variants',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Create content roadmaps with strategic planning',
+      status: 'Ready'
     },
     {
       id: 7,
-      name: '50 VIDEOS FETCHER',
-      codename: 'AGENT-007',
+      name: 'Video Fetcher',
+      codename: 'Agent 7',
       icon: Link,
-      description: 'Fetch latest 50 video links from any YouTube channel',
-      status: 'READY',
-      color: 'text-military-green'
+      description: 'Fetch latest videos from any YouTube channel',
+      status: 'Ready'
     },
   ];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-military-darker via-military-gray to-military-dark text-military-text overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-80 mix-blend-lighten">
-        <div className="absolute -inset-20 animate-smoke bg-[radial-gradient(circle_at_top,_rgba(92,154,111,0.12)_0%,_transparent_60%)]" />
-        <div className="absolute inset-0 animate-smoke [animation-delay:8s] bg-[radial-gradient(circle_at_bottom,_rgba(63,111,83,0.1)_0%,_transparent_55%)]" />
-      </div>
-      {/* Header */}
-      <header className="border-b border-military-border/60 bg-military-dark/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Shield className="w-9 h-9 text-military-green" />
-              <div>
-                <h1 className="text-2xl font-semibold tracking-wide text-military-text">
-                  <span className="text-military-orange">YOUTUBE</span>{' '}
-                  <span className="text-military-green">OPS COMMAND</span>
-                </h1>
-                <p className="text-xs text-military-muted font-mono uppercase">
-                  Tactical Content Warfare System v1.0
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              {/* Analytics Dashboard Button */}
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-military-orange/30 bg-military-orange/10 hover:bg-military-orange/20 transition-colors"
-                title="View Analytics Dashboard"
-              >
-                <Terminal className="w-4 h-4 text-military-orange" />
-                <span className="text-sm font-mono text-military-orange">ANALYTICS</span>
-              </button>
-
-              {/* RL System Button */}
-              <button
-                onClick={() => router.push('/rl-system')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-military-green/30 bg-military-green/10 hover:bg-military-green/20 transition-colors"
-                title="View RL System Dashboard"
-              >
-                <Brain className="w-4 h-4 text-military-green" />
-                <span className="text-sm font-mono text-military-green">RL SYSTEM</span>
-              </button>
-
-              {/* API Status */}
-              <div className="flex items-center gap-2 text-sm font-mono text-military-muted">
-                <span
-                  className={`inline-flex h-2.5 w-2.5 rounded-full ${
-                    apiStatus === 'online' ? 'bg-military-green' :
-                    apiStatus === 'checking' ? 'bg-military-orange' : 'bg-military-red'
-                  }`}
-                />
-                <span>
-                  API: {apiStatus.toUpperCase()}
-                </span>
-              </div>
-              
-              {/* Mission Time */}
-              <div className="font-mono text-sm text-military-muted">
-                <span className="text-military-orange tracking-wide">MISSION TIME:</span>{' '}
-                {missionTime}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8 space-y-10">
-        {/* Mission Briefing */}
-        <div className="border border-military-border bg-military-dark/70 p-6 rounded-lg shadow-lg">
-          <div className="flex items-start gap-4">
-            <Terminal className="w-6 h-6 text-military-orange mt-1" />
-            <div>
-              <h2 className="text-xl font-semibold text-military-orange mb-2 tracking-wide uppercase">
-                Mission Briefing
-              </h2>
-              <p className="text-military-muted leading-relaxed">
-                Deploy six coordinated AI units for comprehensive YouTube intelligence and operational planning.
-                Select an asset to initiate reconnaissance, analytics, or strategic execution.
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Left Sidebar - Agents */}
+      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        {/* Logo/Title */}
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            AI Agents
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Select an agent
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
-          {/* Agent Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {agents.map((agent) => {
-              const Icon = agent.icon;
-              const isActive = activeAgent === agent.id;
-
-              return (
-                <div
-                  key={agent.id}
-                  onClick={() => setActiveAgent(isActive ? null : agent.id)}
-                  className={`
-                    border transition-colors duration-200 cursor-pointer
-                    rounded-lg p-6 h-full flex flex-col justify-between
-                    ${
-                      isActive
-                        ? 'border-military-green bg-military-gray/40'
-                        : 'border-military-border bg-military-dark/70 hover:border-military-green'
-                    }
-                  `}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-md border ${
-                          isActive
-                            ? 'border-military-green bg-military-green/10'
-                            : 'border-military-border bg-military-gray'
-                        }`}>
-                          <Icon className="w-6 h-6 text-military-green" />
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-mono tracking-wide text-military-orange uppercase">
-                            {agent.codename}
-                          </h3>
-                          <p className="text-lg font-semibold text-military-text">
-                            {agent.name}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-mono text-military-muted border border-military-border rounded px-2 py-1 uppercase">
-                        {agent.status}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-military-muted leading-relaxed">
-                      {agent.description}
-                    </p>
-
-                    <button
-                      className={`
-                        w-full py-2 px-4 rounded font-mono text-sm font-semibold
-                        transition-colors duration-200
-                        ${
-                          isActive
-                            ? 'bg-military-green text-military-dark border border-military-green'
-                            : 'bg-transparent border border-military-border text-military-muted hover:border-military-green hover:text-military-text'
-                        }
-                      `}
-                    >
-                      {isActive ? 'Active' : 'Deploy'}
-                    </button>
-                  </div>
+        {/* Navigation - Agents List */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {agents.map((agent) => {
+            const Icon = agent.icon;
+            const isActive = activeAgent === agent.id;
+            return (
+              <button
+                key={agent.id}
+                onClick={() => setActiveAgent(isActive ? null : agent.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <div className="flex-1 min-w-0">
+                  <span className="block truncate">{agent.name}</span>
                 </div>
-              );
-            })}
-          </div>
+              </button>
+            );
+          })}
+        </nav>
 
-          {/* Saved Responses Sidebar */}
-          <aside className="border border-military-border bg-military-dark/70 rounded-lg shadow-lg p-5 flex flex-col">
-            <header className="flex items-center justify-between mb-4">
+        {/* Footer - Analytics Dashboard Button */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <Terminal className="w-4 h-4" />
+            <span>Analytics Dashboard</span>
+          </button>
+          
+          {/* API Status */}
+          <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                apiStatus === 'online'
+                  ? 'bg-green-500'
+                  : apiStatus === 'offline'
+                  ? 'bg-red-500'
+                  : 'bg-yellow-500 animate-pulse'
+              }`}
+            />
+            <span>API: {apiStatus}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Left Side - Saved Responses */}
+        <div className={`${activeAgent ? 'w-1/2' : 'flex-1'} overflow-auto transition-all duration-300`}>
+          <div className="max-w-4xl mx-auto p-6 space-y-6">
+            {/* Header */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    YouTube AI Agents
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    {activeAgent ? 'Chat active on the right' : 'Select an agent from the sidebar to start'}
+                  </p>
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {currentTime}
+                </div>
+              </div>
+            </div>
+
+            {/* Saved Responses Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-sm font-mono uppercase tracking-wide text-military-orange">Saved Responses</h3>
-                <p className="text-xs text-military-muted">Bookmark agent intel for later reuse.</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Saved Responses</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">View and manage your saved agent responses</p>
                 {savedResponseStatus === 'error' && savedResponseMessage && (
-                  <p className="text-xs text-red-400 mt-1">{savedResponseMessage}</p>
+                  <p className="text-sm text-red-500 mt-2">{savedResponseMessage}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => refreshSavedResponses()}
-                className="inline-flex items-center gap-2 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-text hover:border-military-green hover:text-military-green transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
               >
-                <Loader2 className={`h-3 w-3 ${savedResponseStatus === 'loading' ? 'animate-spin' : ''}`} />
+                <Loader2 className={`h-4 w-4 ${savedResponseStatus === 'loading' ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
-            </header>
-
-            <div className="flex-1 flex flex-col gap-4 min-h-0">
-              <div className="flex-1 border border-military-border rounded-md bg-military-dark/60 p-3 overflow-y-auto space-y-2 max-h-[calc(100vh-400px)]">
-                {savedResponses.length > 0 ? (
-                  savedResponses.map((response) => {
-                    return (
-                      <button
-                        key={response.id}
-                        type="button"
-                        onClick={() => handleSelectSavedResponse(response.id)}
-                        className="w-full text-left px-3 py-2 rounded-md border text-sm font-mono transition-colors border-military-border text-military-muted hover:border-military-green hover:text-military-text"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate">{response.title}</span>
-                          <BookmarkCheck className="h-3 w-3 text-military-orange" />
-                        </div>
-                        <p className="mt-1 text-[10px] text-military-muted/80">
-                          {response.updated_at ? new Date(response.updated_at).toLocaleString() : 'Never updated'}
-                        </p>
-                      </button>
-                    );
-                  })
-                ) : (
-                  <p className="text-xs text-military-muted px-2 py-4 text-center border border-dashed border-military-border rounded-md">
-                    Saved responses will appear here once you save an agent output.
-                  </p>
-                )}
-              </div>
             </div>
-          </aside>
-        </div>
 
-        {/* Response View Modal */}
-        {isResponseViewModalOpen && selectedSavedResponse && (
-          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl bg-military-dark border border-military-border rounded-lg shadow-lg flex flex-col max-h-[85vh]">
-              {/* Modal Header */}
-              <div className="border-b border-military-border p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-mono uppercase tracking-wide text-military-orange">{selectedSavedResponse.title}</h3>
-                  <p className="text-xs text-military-muted mt-1">
-                    {selectedSavedResponse.agent_name} • {selectedSavedResponse.updated_at ? new Date(selectedSavedResponse.updated_at).toLocaleString() : 'Not updated'}
+            <div className="space-y-2">
+              {savedResponses.length > 0 ? (
+                savedResponses.map((response) => {
+                  return (
+                    <button
+                      key={response.id}
+                      type="button"
+                      onClick={() => handleSelectSavedResponse(response.id)}
+                      className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white truncate">{response.title}</span>
+                        <BookmarkCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {response.updated_at ? new Date(response.updated_at).toLocaleString() : 'Never updated'}
+                      </p>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                  <BookmarkCheck className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No saved responses yet. Save agent outputs to view them here.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsResponseViewModalOpen(false)}
-                  className="text-military-muted hover:text-military-orange transition-colors font-mono text-xs px-4 py-2 border border-military-border hover:border-military-orange rounded uppercase tracking-wide"
-                >
-                  Close
-                </button>
-              </div>
+              )}
+            </div>
+          </div>
 
-              {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="text-sm font-mono text-military-text whitespace-pre-wrap break-words border border-military-border rounded-md bg-military-dark/70 p-4">
-                  {selectedSavedResponse.content}
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="border-t border-military-border p-4">
-                <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Response View Modal */}
+          {isResponseViewModalOpen && selectedSavedResponse && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="w-full max-w-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg flex flex-col max-h-[85vh]">
+                {/* Modal Header */}
+                <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{selectedSavedResponse.title}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {selectedSavedResponse.agent_name} • {selectedSavedResponse.updated_at ? new Date(selectedSavedResponse.updated_at).toLocaleString() : 'Not updated'}
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => handleCopyResponse(selectedSavedResponse.content, selectedSavedResponse.id)}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
+                    onClick={() => setIsResponseViewModalOpen(false)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors px-4 py-2 border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg font-medium"
                   >
-                    {copiedResponseId === selectedSavedResponse.id ? (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Copy
-                      </>
-                    )}
+                    Close
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 p-4">
+                    {selectedSavedResponse.content}
+                  </div>
+                </div>
+
+                {/* Modal Actions */}
+                <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyResponse(selectedSavedResponse.content, selectedSavedResponse.id)}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      {copiedResponseId === selectedSavedResponse.id ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPDF(
+                        selectedSavedResponse.title,
+                        selectedSavedResponse.content,
+                        selectedSavedResponse.agent_name,
+                        selectedSavedResponse.created_at ?? undefined
+                      )}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRenameValue(selectedSavedResponse.title);
+                        setIsRenameModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Rename
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-red-300 dark:border-red-700 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {isDeleteModalOpen && selectedSavedResponse && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-lg shadow-lg p-6">
+                <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-4">
+                  Delete Saved Response
+                </h3>
+                <p className="text-gray-900 dark:text-gray-100 text-sm mb-2">
+                  Are you sure you want to delete <span className="font-semibold">"{selectedSavedResponse.title}"</span>?
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                  This action cannot be undone.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDownloadPDF(
-                      selectedSavedResponse.title,
-                      selectedSavedResponse.content,
-                      selectedSavedResponse.agent_name,
-                      selectedSavedResponse.created_at ?? undefined
-                    )}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
+                    onClick={handleDeleteSavedResponse}
+                    disabled={savedResponseStatus === 'saving'}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Download className="h-4 w-4" />
-                    Download
+                    {savedResponseStatus === 'saving' ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rename Modal */}
+          {isRenameModalOpen && selectedSavedResponse && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                  Rename Response
+                </h3>
+                <input
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleUpdateSavedResponse(renameValue);
+                      setIsRenameModalOpen(false);
+                    }
+                  }}
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                  placeholder="Enter new name"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsRenameModalOpen(false)}
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      setRenameValue(selectedSavedResponse.title);
-                      setIsRenameModalOpen(true);
+                      handleUpdateSavedResponse(renameValue);
+                      setIsRenameModalOpen(false);
                     }}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-military-muted hover:border-military-green hover:text-military-green transition-colors"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                   >
-                    <Pencil className="h-4 w-4" />
-                    Rename
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-2 border border-military-border rounded-md text-xs font-mono uppercase tracking-wide text-red-400 hover:border-red-400 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
+                    OK
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Delete Confirmation Modal */}
-        {isDeleteModalOpen && selectedSavedResponse && (
-          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-military-dark border border-red-500/50 rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-red-400 tracking-wide uppercase mb-4">
-                Delete Saved Response
-              </h3>
-              <p className="text-military-text text-sm mb-2">
-                Are you sure you want to delete <span className="text-military-orange font-semibold">"{selectedSavedResponse.title}"</span>?
-              </p>
-              <p className="text-military-muted text-xs mb-6">
-                This action cannot be undone.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="px-4 py-2 bg-military-dark border border-military-border hover:border-military-green text-military-muted hover:text-military-green rounded-md font-mono text-sm transition-colors uppercase"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteSavedResponse}
-                  disabled={savedResponseStatus === 'saving'}
-                  className="px-4 py-2 bg-red-500/20 border border-red-500 hover:bg-red-500 hover:text-white text-red-400 rounded-md font-mono text-sm font-semibold transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {savedResponseStatus === 'saving' ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Rename Modal */}
-        {isRenameModalOpen && selectedSavedResponse && (
-          <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-military-dark border border-military-border rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-military-orange tracking-wide uppercase mb-4">
-                Rename File
-              </h3>
-              <input
-                type="text"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleUpdateSavedResponse(renameValue);
-                    setIsRenameModalOpen(false);
-                  }
-                }}
-                className="w-full bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green font-mono text-sm mb-4"
-                placeholder="Enter new name"
-                autoFocus
-              />
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsRenameModalOpen(false)}
-                  className="px-4 py-2 bg-military-dark border border-military-border hover:border-military-orange text-military-muted hover:text-military-orange rounded-md font-mono text-sm transition-colors uppercase"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleUpdateSavedResponse(renameValue);
-                    setIsRenameModalOpen(false);
-                  }}
-                  className="px-4 py-2 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors uppercase"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Active Agent Chat Interface */}
-        {activeAgent && (
-          <ChatInterface
-            agentId={activeAgent}
-            agentName={agents.find(a => a.id === activeAgent)?.name || ''}
-            agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
-            onClose={() => setActiveAgent(null)}
-            onSubmit={async (userInput, formData) => {
-              return await handleAgentMessage(activeAgent, userInput, formData);
-            }}
-            onSaveResponse={handleSaveChatResponse}
-          />
-        )}
-
-        {/* System Info Footer */}
-        <div className="border-t border-military-border pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-mono text-military-muted">
-            <div className="uppercase tracking-wide">
-              <span className="text-military-orange">System:</span> Operational
-            </div>
-            <div className="uppercase tracking-wide">
-              <span className="text-military-orange">Agents:</span> 6/6 Ready
-            </div>
-            <div className="uppercase tracking-wide">
-              <span className="text-military-orange">Clearance:</span> Top Secret
-            </div>
           </div>
         </div>
-      </main>
+
+        {/* Right Side - Chat Interface */}
+        {activeAgent && (
+          <div className="w-1/2 border-l border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col bg-white dark:bg-gray-800">
+            <ChatInterface
+              agentId={activeAgent}
+              agentName={agents.find(a => a.id === activeAgent)?.name || ''}
+              agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
+              onClose={() => setActiveAgent(null)}
+              onSubmit={async (userInput, formData) => {
+                return await handleAgentMessage(activeAgent, userInput, formData);
+              }}
+              onSaveResponse={handleSaveChatResponse}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

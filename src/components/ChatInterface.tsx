@@ -343,31 +343,30 @@ I'll return a clean list of 50 video links with titles. What channel do you need
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-military-darker/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl h-[80vh] bg-military-dark border border-military-border rounded-lg flex flex-col shadow-lg">
-        {/* Header */}
-        <div className="border-b border-military-border p-4 flex items-center justify-between bg-military-darker/70">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-military-green" />
-            <div>
-              <h3 className="text-lg font-semibold text-military-orange tracking-wide uppercase">
-                {agentCodename}
-              </h3>
-              <p className="text-xs text-military-muted font-mono">
-                {agentName}
-              </p>
-            </div>
+    <>
+      {/* Header */}
+      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between bg-white dark:bg-gray-800">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              {agentName}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {agentCodename}
+            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-military-muted hover:text-military-orange transition-colors font-mono text-xs px-4 py-2 border border-military-border hover:border-military-orange rounded uppercase tracking-wide"
-          >
-            Close
-          </button>
         </div>
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors px-4 py-2 border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg font-medium"
+        >
+          Close
+        </button>
+      </div>
 
-        {/* Messages Area - includes form for Agent 3 */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-military-dark/40">
+      {/* Messages Area - includes form for Agent 3 */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900">
           {/* Script Generator Form for Agent 3 */}
           {agentId === 3 && (
             <div className="mb-6">
@@ -384,26 +383,26 @@ I'll return a clean list of 50 video links with titles. What channel do you need
               }`}
             >
               {message.role !== 'user' && (
-                <div className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center ${
+                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
                   message.role === 'agent' 
-                    ? 'bg-military-gray border border-military-border'
-                    : 'bg-military-orange/20 border border-military-orange/40'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
+                    : 'bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800'
                 }`}>
                   {message.role === 'agent' ? (
-                    <Bot className="w-5 h-5 text-military-green" />
+                    <Bot className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   ) : (
-                    <AlertCircle className="w-5 h-5 text-military-orange" />
+                    <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                   )}
                 </div>
               )}
 
               <div
-                className={`relative max-w-[70%] rounded-md p-4 ${
+                className={`relative max-w-[70%] rounded-lg p-4 ${
                   message.role === 'user'
-                    ? 'bg-military-gray border border-military-border'
+                    ? 'bg-blue-600 text-white'
                     : message.role === 'agent'
-                    ? 'bg-military-dark/60 border border-military-border'
-                    : 'bg-military-orange/10 border border-military-orange/30'
+                    ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
                 }`}
               >
                 {message.role === 'agent' ? (
@@ -413,19 +412,25 @@ I'll return a clean list of 50 video links with titles. What channel do you need
                     <MarkdownRenderer content={message.content} />
                   )
                 ) : (
-                  <p className="text-military-text text-sm leading-relaxed whitespace-pre-wrap break-words">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                     {message.content}
                   </p>
                 )}
                 <div className="mt-3 flex items-center justify-between gap-2">
-                  <p className="text-xs text-military-muted font-mono">
+                  <p className={`text-xs ${
+                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                  }`}>
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => handleCopy(message.content, index)}
-                      className="inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors"
+                      className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+                        message.role === 'user'
+                          ? 'bg-blue-700 hover:bg-blue-800 text-white border border-blue-500'
+                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
+                      }`}
                       aria-label="Copy message"
                     >
                       {copiedIndex === index ? (
@@ -446,12 +451,12 @@ I'll return a clean list of 50 video links with titles. What channel do you need
                         type="button"
                         onClick={() => handleSave(message.content, index)}
                         disabled={saveStatus[index] === 'saving' || saveStatus[index] === 'saved'}
-                        className={`inline-flex items-center gap-1 rounded bg-military-dark/70 border px-2 py-1 text-[10px] font-mono uppercase tracking-wide transition-colors ${
+                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
                           saveStatus[index] === 'saved'
-                            ? 'border-military-green text-military-green'
+                            ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-400'
                             : saveStatus[index] === 'error'
-                            ? 'border-red-500 text-red-400 hover:text-red-300'
-                            : 'border-military-border text-military-muted hover:text-military-green'
+                            ? 'bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400'
+                            : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
                         } disabled:cursor-not-allowed disabled:opacity-60`}
                         aria-label="Save response"
                       >
@@ -484,7 +489,7 @@ I'll return a clean list of 50 video links with titles. What channel do you need
                         type="button"
                         onClick={() => handleDownloadPDF(message.content, index)}
                         disabled={downloadingIndex === index}
-                        className="inline-flex items-center gap-1 rounded bg-military-dark/70 border border-military-border px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-military-muted hover:text-military-orange transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
                         aria-label="Download PDF"
                       >
                         {downloadingIndex === index ? (
@@ -505,8 +510,8 @@ I'll return a clean list of 50 video links with titles. What channel do you need
               </div>
 
               {message.role === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-md bg-military-gray border border-military-border flex items-center justify-center">
-                  <User className="w-5 h-5 text-military-text" />
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
                 </div>
               )}
             </div>
@@ -514,13 +519,13 @@ I'll return a clean list of 50 video links with titles. What channel do you need
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-md bg-military-gray border border-military-border flex items-center justify-center">
-                <Bot className="w-5 h-5 text-military-green" />
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="bg-military-dark/60 border border-military-border rounded-md p-4">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 text-military-green animate-spin" />
-                  <p className="text-military-muted text-sm font-mono">
+                  <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
                     Processing...
                   </p>
                 </div>
@@ -533,7 +538,7 @@ I'll return a clean list of 50 video links with titles. What channel do you need
 
         {/* Input Area - Hidden for Agent 3 (form-based) */}
         {agentId !== 3 && (
-          <div className="border-t border-military-border p-4 bg-military-darker/70">
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
             <form onSubmit={handleSubmit} className="flex gap-3">
               <textarea
                 ref={inputRef}
@@ -543,46 +548,28 @@ I'll return a clean list of 50 video links with titles. What channel do you need
                 placeholder="Ask anything about YouTube, share URLs, or request analysis... (Shift+Enter for new line)"
                 disabled={isLoading}
                 rows={3}
-                className="flex-1 bg-military-dark/60 border border-military-border rounded-md px-4 py-3 text-military-text placeholder-military-muted focus:outline-none focus:border-military-green resize-none font-mono text-sm disabled:opacity-50"
+                className="flex-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="px-5 py-3 bg-military-green/20 border border-military-green hover:bg-military-green hover:text-military-dark text-military-text rounded-md font-mono text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-military-green/20 disabled:hover:text-military-text flex items-center gap-2"
+                className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
                     <Send className="w-5 h-5" />
-                    SEND
+                    Send
                   </>
                 )}
               </button>
             </form>
-            <p className="text-xs text-military-muted mt-2 font-mono">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Press Enter to send · Shift+Enter for new line
             </p>
           </div>
         )}
-      </div>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(90, 135, 108, 0.1);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(90, 135, 108, 0.3);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(90, 135, 108, 0.5);
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
