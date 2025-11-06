@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { jsPDF } from 'jspdf';
+import { Copy, Download, Check } from 'lucide-react';
 import {
   trackChannel,
   getTrackedChannels,
@@ -54,6 +56,60 @@ export default function AnalyticsDashboard() {
   const [titleCount, setTitleCount] = useState(5);
   const [roadmapVideos, setRoadmapVideos] = useState(30);
   const [roadmapDays, setRoadmapDays] = useState(90);
+
+  // Copy/Download state
+  const [copiedScript, setCopiedScript] = useState(false);
+  const [copiedIdeas, setCopiedIdeas] = useState(false);
+  const [copiedTitles, setCopiedTitles] = useState(false);
+  const [copiedRoadmap, setCopiedRoadmap] = useState(false);
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, setCopied: (val: boolean) => void) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  // Download as PDF function
+  const downloadAsPDF = (content: string, filename: string) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+      
+      // Title
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(filename, margin, margin);
+      
+      // Content
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      // Split content into lines
+      const lines = doc.splitTextToSize(content, maxWidth);
+      let y = margin + 10;
+      
+      lines.forEach((line: string) => {
+        if (y > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, margin, y);
+        y += 7;
+      });
+      
+      doc.save(`${filename}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+    }
+  };
 
   // Load initial data
   useEffect(() => {
@@ -533,6 +589,25 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => copyToClipboard(scriptResponse.result, setCopiedScript)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          {copiedScript ? <Check size={16} /> : <Copy size={16} />}
+                          {copiedScript ? 'Copied!' : 'Copy'}
+                        </button>
+                        <button
+                          onClick={() => downloadAsPDF(scriptResponse.result, `Script-${scriptTopic}`)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          <Download size={16} />
+                          Download PDF
+                        </button>
+                      </div>
+                      
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {scriptResponse.result}
@@ -597,6 +672,25 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => copyToClipboard(ideasResponse.result, setCopiedIdeas)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          {copiedIdeas ? <Check size={16} /> : <Copy size={16} />}
+                          {copiedIdeas ? 'Copied!' : 'Copy'}
+                        </button>
+                        <button
+                          onClick={() => downloadAsPDF(ideasResponse.result, `Video-Ideas-${ideasStyle}`)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          <Download size={16} />
+                          Download PDF
+                        </button>
+                      </div>
+                      
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {ideasResponse.result}
@@ -659,6 +753,25 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => copyToClipboard(titlesResponse.result, setCopiedTitles)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          {copiedTitles ? <Check size={16} /> : <Copy size={16} />}
+                          {copiedTitles ? 'Copied!' : 'Copy'}
+                        </button>
+                        <button
+                          onClick={() => downloadAsPDF(titlesResponse.result, `Video-Titles`)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          <Download size={16} />
+                          Download PDF
+                        </button>
+                      </div>
+                      
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {titlesResponse.result}
@@ -722,6 +835,25 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => copyToClipboard(roadmapResponse.result, setCopiedRoadmap)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          {copiedRoadmap ? <Check size={16} /> : <Copy size={16} />}
+                          {copiedRoadmap ? 'Copied!' : 'Copy'}
+                        </button>
+                        <button
+                          onClick={() => downloadAsPDF(roadmapResponse.result, `Content-Roadmap-${roadmapVideos}videos`)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          <Download size={16} />
+                          Download PDF
+                        </button>
+                      </div>
+                      
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {roadmapResponse.result}
