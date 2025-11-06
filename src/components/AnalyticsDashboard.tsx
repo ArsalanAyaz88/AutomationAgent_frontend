@@ -808,6 +808,36 @@ export default function AnalyticsDashboard() {
                     Generate scripts optimized for YOUR channel's style and audience
                   </p>
 
+                  {/* Selected Channel Info */}
+                  {selectedChannel && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={selectedChannel.thumbnail}
+                          alt={selectedChannel.channel_title}
+                          className="w-16 h-16 rounded-full border-2 border-white dark:border-gray-800 shadow-lg"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-lg">{selectedChannel.channel_title}</h4>
+                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
+                              ✓ ACTIVE
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Script will be optimized for this channel's style and audience
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            👥 {selectedChannel.subscriber_count.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">subscribers</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleGenerateScript} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Video Topic</label>
@@ -975,6 +1005,36 @@ export default function AnalyticsDashboard() {
                     Get video ideas based on YOUR channel's proven success patterns
                   </p>
 
+                  {/* Selected Channel Info */}
+                  {selectedChannel && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={selectedChannel.thumbnail}
+                          alt={selectedChannel.channel_title}
+                          className="w-16 h-16 rounded-full border-2 border-white dark:border-gray-800 shadow-lg"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-lg">{selectedChannel.channel_title}</h4>
+                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
+                              ✓ ACTIVE
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Ideas will be optimized for this channel's audience and style
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            👥 {selectedChannel.subscriber_count.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">subscribers</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleGenerateIdeas} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1058,6 +1118,36 @@ export default function AnalyticsDashboard() {
                     Generate titles matching YOUR channel's successful patterns
                   </p>
 
+                  {/* Selected Channel Info */}
+                  {selectedChannel && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={selectedChannel.thumbnail}
+                          alt={selectedChannel.channel_title}
+                          className="w-16 h-16 rounded-full border-2 border-white dark:border-gray-800 shadow-lg"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-lg">{selectedChannel.channel_title}</h4>
+                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
+                              ✓ ACTIVE
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Titles will match this channel's proven patterns
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            👥 {selectedChannel.subscriber_count.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">subscribers</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleGenerateTitles} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Video Description</label>
@@ -1138,6 +1228,36 @@ export default function AnalyticsDashboard() {
                   <p className="text-gray-600 dark:text-gray-400">
                     Create a strategic roadmap based on YOUR channel's strengths
                   </p>
+
+                  {/* Selected Channel Info */}
+                  {selectedChannel && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={selectedChannel.thumbnail}
+                          alt={selectedChannel.channel_title}
+                          className="w-16 h-16 rounded-full border-2 border-white dark:border-gray-800 shadow-lg"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-lg">{selectedChannel.channel_title}</h4>
+                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
+                              ✓ ACTIVE
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Roadmap will be tailored for this channel's strengths
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            👥 {selectedChannel.subscriber_count.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">subscribers</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <form onSubmit={handleGenerateRoadmap} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
