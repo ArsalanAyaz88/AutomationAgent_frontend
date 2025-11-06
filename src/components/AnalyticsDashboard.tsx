@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   trackChannel,
   getTrackedChannels,
@@ -531,7 +533,11 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{scriptResponse.result}</pre>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {scriptResponse.result}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -591,7 +597,11 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{ideasResponse.result}</pre>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {ideasResponse.result}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -649,7 +659,11 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{titlesResponse.result}</pre>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {titlesResponse.result}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -708,7 +722,11 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       )}
-                      <pre className="whitespace-pre-wrap font-sans text-sm">{roadmapResponse.result}</pre>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {roadmapResponse.result}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </div>
