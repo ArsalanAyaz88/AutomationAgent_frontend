@@ -327,3 +327,117 @@ export async function deleteSavedResponse(responseId: string): Promise<void> {
     throw new Error(message || `API Error: ${response.status}`);
   }
 }
+
+// ========================
+// RL SYSTEM API
+// ========================
+
+export interface RLAgentStatus {
+  agent_name: string;
+  agent_type: string;
+  capabilities: string[];
+  stm_status: {
+    connected: boolean;
+    key_prefix: string;
+    storage_type: 'redis' | 'memory';
+  };
+  ltm_status: {
+    connected: boolean;
+    collections: string[];
+    database: string;
+  };
+  rl_engine_status: {
+    active: boolean;
+    learning_rate: number;
+    discount_factor: number;
+    epsilon: number;
+    total_actions: number;
+    avg_reward: number;
+  };
+  last_updated: string;
+}
+
+export interface RLSystemStatus {
+  total_agents: number;
+  operational_agents: number;
+  central_memory_connected: boolean;
+  agents: RLAgentStatus[];
+  system_health: 'fully_operational' | 'partially_operational' | 'offline';
+}
+
+export interface AgentLearningStats {
+  agent_name: string;
+  stm_experiences: number;
+  ltm_experiences: number;
+  recent_rewards: number[];
+  best_actions: Array<{
+    action_type: string;
+    q_value: number;
+    confidence: number;
+  }>;
+  learning_progress: {
+    exploration_rate: number;
+    exploitation_rate: number;
+    avg_q_value: number;
+  };
+}
+
+export interface CentralMemoryInsights {
+  total_global_insights: number;
+  top_insights: Array<{
+    insight_type: string;
+    confidence: number;
+    applicable_agents: string;
+  }>;
+  cross_agent_patterns: number;
+  performance_leaderboard: Array<{
+    agent_id: string;
+    overall_score: number;
+    rank: number;
+  }>;
+}
+
+export async function getRLSystemStatus(): Promise<RLSystemStatus> {
+  try {
+    const response = await fetch(`${API_BASE}/api/rl/system-status`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch RL system status:', error);
+    return {
+      total_agents: 0,
+      operational_agents: 0,
+      central_memory_connected: false,
+      agents: [],
+      system_health: 'offline'
+    };
+  }
+}
+
+export async function getAgentLearningStats(agentName: string): Promise<AgentLearningStats | null> {
+  try {
+    const response = await fetch(`${API_BASE}/api/rl/agent/${agentName}/stats`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to fetch stats for ${agentName}:`, error);
+    return null;
+  }
+}
+
+export async function getCentralMemoryInsights(): Promise<CentralMemoryInsights | null> {
+  try {
+    const response = await fetch(`${API_BASE}/api/rl/central-memory/insights`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch central memory insights:', error);
+    return null;
+  }
+}

@@ -31,7 +31,8 @@ import {
   Copy,
   Download,
   Check,
-  Link
+  Link,
+  Brain
 } from 'lucide-react';
 
 export default function CommandCenter() {
@@ -399,6 +400,16 @@ export default function CommandCenter() {
             </div>
             
             <div className="flex items-center gap-6">
+              {/* RL System Button */}
+              <button
+                onClick={() => router.push('/rl-system')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-military-green/30 bg-military-green/10 hover:bg-military-green/20 transition-colors"
+                title="View RL System Dashboard"
+              >
+                <Brain className="w-4 h-4 text-military-green" />
+                <span className="text-sm font-mono text-military-green">RL SYSTEM</span>
+              </button>
+
               {/* API Status */}
               <div className="flex items-center gap-2 text-sm font-mono text-military-muted">
                 <span
