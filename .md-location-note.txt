@@ -1,0 +1,11 @@
+📝 MARKDOWN FILES LOCATION POLICY
+====================================
+
+⚠️  IMPORTANT: All .md files must be created in read_files/ folder
+
+✅ Correct:   frontend/read_files/YOUR_FILE.md
+❌ Wrong:     frontend/YOUR_FILE.md
+
+Exception:   README.md (stays in root for GitHub)
+
+For details: See read_files/MARKDOWN_FILES_LOCATION.md
