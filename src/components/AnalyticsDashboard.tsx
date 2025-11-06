@@ -24,7 +24,11 @@ type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'roadma
 
 export default function AnalyticsDashboard() {
   // State management
-  const [activeTab, setActiveTab] = useState<TabType>('channels');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    // Restore saved tab from localStorage, default to 'channels' for first visit
+    const savedTab = localStorage.getItem('activeTab');
+    return (savedTab as TabType) || 'channels';
+  });
   const [channelUrl, setChannelUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -173,6 +177,11 @@ export default function AnalyticsDashboard() {
       console.error('Failed to generate PDF:', err);
     }
   };
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   // Load initial data
   useEffect(() => {
