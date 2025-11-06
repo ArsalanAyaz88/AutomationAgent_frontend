@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
-import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map } from 'lucide-react';
+import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import VideoAnalyticsDisplay from '@/components/VideoAnalyticsDisplay';
 import {
   trackChannel,
@@ -30,6 +31,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
 type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap';
 
 export default function AnalyticsDashboard() {
+  const router = useRouter();
   // State management
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (typeof window !== 'undefined') {
@@ -648,6 +650,16 @@ export default function AnalyticsDashboard() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto p-6 space-y-6">
 
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => router.push('/agents')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">Back to Agents</span>
+            </button>
+          </div>
+
         {/* Analytics Status Banner */}
         {analyticsStatus && (
           <div
@@ -741,34 +753,27 @@ export default function AnalyticsDashboard() {
                     <div className="space-y-6">
                       {/* Selected Channel Card */}
                       <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border-2 border-blue-300 dark:border-blue-700">
-                        <div className="flex items-center space-x-6 mb-6">
-                          <img
-                            src={selectedChannel.thumbnail}
-                            alt={selectedChannel.channel_title}
-                            className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-xl"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-3xl font-bold">{selectedChannel.channel_title}</h3>
-                              <span className="px-3 py-1 bg-green-500 text-white text-sm font-bold rounded-full">
-                                ✓ ACTIVE
-                              </span>
-                            </div>
-                            <p className="text-gray-600 dark:text-gray-400">
-                              All analytics-aware agents are using this channel's data
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                              🆔 Channel ID: {selectedChannel.channel_id}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500">
-                              📅 Last updated: {new Date(selectedChannel.last_accessed).toLocaleDateString()} at{' '}
-                              {new Date(selectedChannel.last_accessed).toLocaleTimeString()}
-                            </p>
+                        <div className="mb-6">
+                          <div className="flex flex-wrap items-center gap-3 mb-2">
+                            <h3 className="text-3xl font-bold">{selectedChannel.channel_title}</h3>
+                            <span className="px-3 py-1 bg-green-500 text-white text-sm font-bold rounded-full">
+                              ✓ ACTIVE
+                            </span>
                           </div>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            All analytics-aware agents are using this channel's data
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                            🆔 Channel ID: {selectedChannel.channel_id}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            📅 Last updated: {new Date(selectedChannel.last_accessed).toLocaleDateString()} at{' '}
+                            {new Date(selectedChannel.last_accessed).toLocaleTimeString()}
+                          </p>
                         </div>
 
                         {/* Statistics Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                           <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
                             <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                               {selectedChannel.subscriber_count.toLocaleString()}
@@ -787,28 +792,7 @@ export default function AnalyticsDashboard() {
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Total Views</p>
                           </div>
-                          <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-                            <p className="text-4xl font-bold text-green-600 dark:text-green-400">✅</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">AI Ready</p>
-                          </div>
                         </div>
-
-                        {/* Top Videos Preview */}
-                        {selectedChannel.top_videos && selectedChannel.top_videos.length > 0 && (
-                          <div className="mt-6 pt-6 border-t border-blue-200 dark:border-blue-800">
-                            <h4 className="font-semibold mb-4 text-lg">🔥 Top Performing Videos:</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {selectedChannel.top_videos.slice(0, 4).map((video: any, idx: number) => (
-                                <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-                                  <p className="font-semibold mb-1 line-clamp-2">{video.title}</p>
-                                  <p className="text-sm text-gray-500">
-                                    👁️ {(video.view_count || 0).toLocaleString()} views
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
 
                       {/* Info Box */}
@@ -911,7 +895,7 @@ export default function AnalyticsDashboard() {
                                   )}
                                 </div>
                                 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-3">
                                   <div>
                                     <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                                       {channel.subscriber_count.toLocaleString()}
@@ -929,12 +913,6 @@ export default function AnalyticsDashboard() {
                                       {(channel.view_count / 1000000).toFixed(1)}M
                                     </p>
                                     <p className="text-xs text-gray-600 dark:text-gray-400">Views</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                      {channel.top_videos?.length || 0}
-                                    </p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">Top Videos</p>
                                   </div>
                                 </div>
                                 
@@ -973,23 +951,6 @@ export default function AnalyticsDashboard() {
                               </button>
                             </div>
                           </div>
-
-                          {/* Top Videos Preview */}
-                          {channel.top_videos && channel.top_videos.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                              <h4 className="font-semibold mb-2 text-sm">🔥 Top Performing Videos:</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {channel.top_videos.slice(0, 4).map((video: any, idx: number) => (
-                                  <div key={idx} className="text-xs bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
-                                    <p className="font-semibold truncate">{video.title}</p>
-                                    <p className="text-gray-500">
-                                      👁️ {(video.view_count || 0).toLocaleString()} views
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
