@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { VideoAnalyticsData } from '@/services/channelAnalytics';
+import { BarChart3, Eye, ThumbsUp, HeartPulse } from 'lucide-react';
 
 interface VideoAnalyticsDisplayProps {
   videoAnalytics: {
@@ -38,27 +39,26 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
     : videoAnalytics.high_engagement_videos;
 
   return (
-    <div className="mt-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-lg shadow-lg border-2 border-blue-200 dark:border-blue-800">
+    <div className="mt-6 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
       {/* Header */}
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors rounded-t-lg"
-        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center justify-between p-6 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800 transition-colors rounded-t-xl"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-            <span className="text-2xl">📊</span>
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-md">
+            <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              AI Analysis Data Source
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Video Analytics Data
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              See which videos AI analyzed to generate recommendations
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Source data for AI recommendations
             </p>
           </div>
         </div>
-        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <span className="text-2xl">{isExpanded ? '▼' : '▶'}</span>
+        <button className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+          <span className="text-lg">{isExpanded ? '▼' : '▶'}</span>
         </button>
       </div>
 
@@ -67,20 +67,29 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
         <div className="p-6 border-t border-blue-200 dark:border-gray-700">
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Videos Analyzed</div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <Eye className="w-4 h-4" />
+                Videos Analyzed
+              </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {videoAnalytics.total_videos_analyzed}
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Average Views</div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <ThumbsUp className="w-4 h-4" />
+                Average Views
+              </div>
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {formatNumber(Math.round(videoAnalytics.avg_views))}
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Engagement</div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <HeartPulse className="w-4 h-4" />
+                Avg Engagement
+              </div>
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {formatPercentage(videoAnalytics.avg_engagement)}
               </div>

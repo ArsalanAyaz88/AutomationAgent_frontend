@@ -31,7 +31,8 @@ import {
   Copy,
   Download,
   Check,
-  Link
+  Link,
+  Brain
 } from 'lucide-react';
 
 export default function AgentsPage() {
@@ -370,8 +371,8 @@ export default function AgentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-      {/* Left Sidebar - Agents */}
-      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+      {/* Left Sidebar - Agents & Saved Responses */}
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         {/* Logo/Title */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -383,7 +384,8 @@ export default function AgentsPage() {
         </div>
 
         {/* Navigation - Agents List */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="p-4 space-y-1">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Agents</h3>
           {agents.map((agent) => {
             const Icon = agent.icon;
             const isActive = activeAgent === agent.id;
@@ -406,8 +408,65 @@ export default function AgentsPage() {
           })}
         </nav>
 
+        {/* Saved Responses Section */}
+        <div className="flex-1 flex flex-col border-t border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Saved Responses</h3>
+              <button
+                type="button"
+                onClick={() => refreshSavedResponses()}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-medium"
+              >
+                <Loader2 className={`h-3 w-3 ${savedResponseStatus === 'loading' ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+            {savedResponseStatus === 'error' && savedResponseMessage && (
+              <p className="text-xs text-red-500 mb-2">{savedResponseMessage}</p>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+            {savedResponses.length > 0 ? (
+              savedResponses.map((response) => {
+                return (
+                  <button
+                    key={response.id}
+                    type="button"
+                    onClick={() => handleSelectSavedResponse(response.id)}
+                    className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">{response.title}</span>
+                      <BookmarkCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {response.updated_at ? new Date(response.updated_at).toLocaleDateString() : 'No date'}
+                    </p>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                <BookmarkCheck className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-xs text-gray-500 dark:text-gray-400 px-2">
+                  No saved responses yet
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Footer - Analytics Dashboard Button */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+          <button
+            onClick={() => router.push('/rl-system')}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg font-medium transition-colors"
+          >
+            <Brain className="w-4 h-4" />
+            <span>RL Dashboard</span>
+          </button>
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
@@ -432,81 +491,38 @@ export default function AgentsPage() {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden flex">
-        {/* Left Side - Saved Responses */}
-        <div className={`${activeAgent ? 'w-1/2' : 'flex-1'} overflow-auto transition-all duration-300`}>
-          <div className="max-w-4xl mx-auto p-6 space-y-6">
-            {/* Header */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    YouTube AI Agents
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mt-1">
-                    {activeAgent ? 'Chat active on the right' : 'Select an agent from the sidebar to start'}
-                  </p>
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {currentTime}
-                </div>
+      {/* Main Content Area - Chat Interface */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {activeAgent ? (
+          <ChatInterface
+            agentId={activeAgent}
+            agentName={agents.find(a => a.id === activeAgent)?.name || ''}
+            agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
+            onClose={() => setActiveAgent(null)}
+            onSubmit={async (userInput, formData) => {
+              return await handleAgentMessage(activeAgent, userInput, formData);
+            }}
+            onSaveResponse={handleSaveChatResponse}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div className="text-center">
+              <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                YouTube AI Agents
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Select an agent from the sidebar to start
+              </p>
+              <div className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                {currentTime}
               </div>
-            </div>
-
-            {/* Saved Responses Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Saved Responses</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">View and manage your saved agent responses</p>
-                {savedResponseStatus === 'error' && savedResponseMessage && (
-                  <p className="text-sm text-red-500 mt-2">{savedResponseMessage}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => refreshSavedResponses()}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-              >
-                <Loader2 className={`h-4 w-4 ${savedResponseStatus === 'loading' ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {savedResponses.length > 0 ? (
-                savedResponses.map((response) => {
-                  return (
-                    <button
-                      key={response.id}
-                      type="button"
-                      onClick={() => handleSelectSavedResponse(response.id)}
-                      className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-gray-900 dark:text-white truncate">{response.title}</span>
-                        <BookmarkCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {response.updated_at ? new Date(response.updated_at).toLocaleString() : 'Never updated'}
-                      </p>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                  <BookmarkCheck className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No saved responses yet. Save agent outputs to view them here.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
+        )}
 
-          {/* Response View Modal */}
-          {isResponseViewModalOpen && selectedSavedResponse && (
+        {/* Response View Modal */}
+        {isResponseViewModalOpen && selectedSavedResponse && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="w-full max-w-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg flex flex-col max-h-[85vh]">
                 {/* Modal Header */}
@@ -591,8 +607,8 @@ export default function AgentsPage() {
             </div>
           )}
 
-          {/* Delete Confirmation Modal */}
-          {isDeleteModalOpen && selectedSavedResponse && (
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && selectedSavedResponse && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-lg shadow-lg p-6">
                 <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-4">
@@ -625,8 +641,8 @@ export default function AgentsPage() {
             </div>
           )}
 
-          {/* Rename Modal */}
-          {isRenameModalOpen && selectedSavedResponse && (
+        {/* Rename Modal */}
+        {isRenameModalOpen && selectedSavedResponse && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-6">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
@@ -668,25 +684,6 @@ export default function AgentsPage() {
               </div>
             </div>
           )}
-
-          </div>
-        </div>
-
-        {/* Right Side - Chat Interface */}
-        {activeAgent && (
-          <div className="w-1/2 border-l border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col bg-white dark:bg-gray-800">
-            <ChatInterface
-              agentId={activeAgent}
-              agentName={agents.find(a => a.id === activeAgent)?.name || ''}
-              agentCodename={agents.find(a => a.id === activeAgent)?.codename || ''}
-              onClose={() => setActiveAgent(null)}
-              onSubmit={async (userInput, formData) => {
-                return await handleAgentMessage(activeAgent, userInput, formData);
-              }}
-              onSaveResponse={handleSaveChatResponse}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
