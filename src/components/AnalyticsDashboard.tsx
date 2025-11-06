@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
-import { Copy, Download, Check } from 'lucide-react';
+import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map } from 'lucide-react';
 import VideoAnalyticsDisplay from '@/components/VideoAnalyticsDisplay';
 import {
   trackChannel,
@@ -602,17 +602,51 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Analytics-Powered AI Dashboard
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Left Sidebar */}
+      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        {/* Logo/Title */}
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            YouTube AI
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
-            Track your channel, view analytics, and get AI-powered recommendations
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Analytics Dashboard
           </p>
         </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1">
+          {[
+            { id: 'channels', icon: Tv, label: 'Channels' },
+            { id: 'overview', icon: BarChart3, label: 'Overview' },
+            { id: 'ideas', icon: Lightbulb, label: 'Video Ideas' },
+            { id: 'titles', icon: Hash, label: 'Title Generator' },
+            { id: 'roadmap', icon: Map, label: 'Content Roadmap' },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
 
         {/* Analytics Status Banner */}
         {analyticsStatus && (
@@ -693,37 +727,11 @@ export default function AnalyticsDashboard() {
           </div>
         )}
 
-        {/* Main Content - Tabs */}
+        {/* Main Content */}
         {analyticsStatus?.has_analytics && (
           <>
-            {/* Tab Navigation */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2">
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'channels', icon: '📺', label: 'Channels' },
-                  { id: 'overview', icon: '📊', label: 'Overview' },
-                  
-                  { id: 'ideas', icon: '💡', label: 'Video Ideas' },
-                  { id: 'titles', icon: '📌', label: 'Title Generator' },
-                  { id: 'roadmap', icon: '🗺️', label: 'Content Roadmap' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`flex-1 min-w-[140px] px-4 py-3 rounded-lg font-semibold transition-all ${
-                      activeTab === tab.id
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
-                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {tab.icon} {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Tab Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               {/* Overview Tab */}
               {activeTab === 'overview' && (
                 <div className="space-y-6">
@@ -1548,6 +1556,7 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
