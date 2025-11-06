@@ -25,9 +25,14 @@ type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'roadma
 export default function AnalyticsDashboard() {
   // State management
   const [activeTab, setActiveTab] = useState<TabType>(() => {
-    // Restore saved tab from localStorage, default to 'channels' for first visit
-    const savedTab = localStorage.getItem('activeTab');
-    return (savedTab as TabType) || 'channels';
+    if (typeof window !== 'undefined') {
+      // Restore saved tab from localStorage, default to 'channels' for first visit
+      const savedTab = window.localStorage.getItem('activeTab');
+      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'script', 'roadmap'].includes(savedTab)) {
+        return savedTab as TabType;
+      }
+    }
+    return 'channels';
   });
   const [channelUrl, setChannelUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -178,9 +183,11 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  // Save active tab to localStorage whenever it changes
+  // Save active tab to localStorage whenever it changes (browser only)
   useEffect(() => {
-    localStorage.setItem('activeTab', activeTab);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('activeTab', activeTab);
+    }
   }, [activeTab]);
 
   // Load initial data
@@ -197,8 +204,10 @@ export default function AnalyticsDashboard() {
       setAnalyticsStatus(status);
       setTrackedChannels(channels.channels);
       
-      // Try to restore selected channel from localStorage
-      const savedChannelId = localStorage.getItem('selectedChannelId');
+      // Try to restore selected channel from localStorage (browser only)
+      const savedChannelId = typeof window !== 'undefined'
+        ? window.localStorage.getItem('selectedChannelId')
+        : null;
       let channelToSelect = null;
       
       if (savedChannelId && channels.channels.length > 0) {
@@ -213,7 +222,9 @@ export default function AnalyticsDashboard() {
       
       if (channelToSelect) {
         setSelectedChannel(channelToSelect);
-        localStorage.setItem('selectedChannelId', channelToSelect._id);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('selectedChannelId', channelToSelect._id);
+        }
       }
     } catch (err: any) {
       console.error('Failed to load data:', err);
@@ -267,7 +278,9 @@ export default function AnalyticsDashboard() {
   // Select a channel as active
   const handleSelectChannel = (channel: TrackedChannel) => {
     setSelectedChannel(channel);
-    localStorage.setItem('selectedChannelId', channel._id);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('selectedChannelId', channel._id);
+    }
     setSuccess(`✅ Now using: ${channel.channel_title}`);
     setTimeout(() => setSuccess(''), 3000);
   };
@@ -298,10 +311,12 @@ export default function AnalyticsDashboard() {
         setSelectedChannel(newSelected);
         
         // Update localStorage
-        if (newSelected) {
-          localStorage.setItem('selectedChannelId', newSelected._id);
-        } else {
-          localStorage.removeItem('selectedChannelId');
+        if (typeof window !== 'undefined') {
+          if (newSelected) {
+            window.localStorage.setItem('selectedChannelId', newSelected._id);
+          } else {
+            window.localStorage.removeItem('selectedChannelId');
+          }
         }
       }
       
