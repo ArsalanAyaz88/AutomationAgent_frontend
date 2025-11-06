@@ -659,42 +659,6 @@ export default function AnalyticsDashboard() {
               <span className="text-sm font-medium">Back to Agents</span>
             </button>
           </div>
-
-        {/* Analytics Status Banner */}
-        {analyticsStatus && (
-          <div
-            className={`p-4 rounded-lg border-2 ${
-              analyticsStatus.has_analytics
-                ? 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-700'
-                : 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-lg">
-                  {analyticsStatus.has_analytics ? '✅ Analytics Active' : '⚠️ No Analytics'}
-                </p>
-                <p className="text-sm opacity-80">{analyticsStatus.message}</p>
-                {analyticsStatus.most_recent_channel && (
-                  <p className="text-sm mt-1">
-                    📺 <strong>{analyticsStatus.most_recent_channel.title}</strong> (
-                    {analyticsStatus.most_recent_channel.subscribers.toLocaleString()} subscribers)
-                  </p>
-                )}
-              </div>
-              {analyticsStatus.has_analytics && (
-                <button
-                  onClick={handleRefreshAnalytics}
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                >
-                  🔄 Refresh
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Track Channel Section */}
         {!analyticsStatus?.has_analytics && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
