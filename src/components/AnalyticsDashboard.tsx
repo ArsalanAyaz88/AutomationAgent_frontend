@@ -27,7 +27,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://automation-agent-backend.vercel.app' 
     : 'http://localhost:8000');
 
-type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'scriptToScene' | 'roadmap';
+type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'scriptToScene' | 'roadmap';
 
 export default function AnalyticsDashboard() {
   // State management
@@ -35,7 +35,7 @@ export default function AnalyticsDashboard() {
     if (typeof window !== 'undefined') {
       // Restore saved tab from localStorage, default to 'channels' for first visit
       const savedTab = window.localStorage.getItem('activeTab');
-      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'script', 'scriptToScene', 'roadmap'].includes(savedTab)) {
+      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'scriptToScene', 'roadmap'].includes(savedTab)) {
         return savedTab as TabType;
       }
     }
@@ -709,7 +709,6 @@ export default function AnalyticsDashboard() {
                   
                   { id: 'ideas', icon: '💡', label: 'Video Ideas' },
                   { id: 'titles', icon: '📌', label: 'Title Generator' },
-                  { id: 'script', icon: '📝', label: 'Script Generator' },
                   { id: 'scriptToScene', icon: '🎬', label: 'Script to Scene' },
                   { id: 'roadmap', icon: '🗺️', label: 'Content Roadmap' },
                 ].map((tab) => (
@@ -1017,204 +1016,7 @@ export default function AnalyticsDashboard() {
                 </div>
               )}
 
-              {/* Script Generator Tab */}
-              {activeTab === 'script' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold">📝 Script Generator</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Generate scripts optimized for YOUR channel's style and audience
-                  </p>
-
-                  {/* Selected Channel Info */}
-                  {selectedChannel && (
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={selectedChannel.thumbnail}
-                          alt={selectedChannel.channel_title}
-                          className="w-16 h-16 rounded-full border-2 border-white dark:border-gray-800 shadow-lg"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-lg">{selectedChannel.channel_title}</h4>
-                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
-                              ✓ ACTIVE
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Script will be optimized for this channel's style and audience
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            👥 {selectedChannel.subscriber_count.toLocaleString()}
-                          </p>
-                          <p className="text-xs text-gray-500">subscribers</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleGenerateScript} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Video Topic</label>
-                      <input
-                        type="text"
-                        value={scriptTopic}
-                        onChange={(e) => setScriptTopic(e.target.value)}
-                        placeholder="e.g., Best Budget Tech 2024"
-                        className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Word Count</label>
-                        <input
-                          type="number"
-                          value={scriptWords}
-                          onChange={(e) => setScriptWords(Number(e.target.value))}
-                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Video Duration (min)</label>
-                        <input
-                          type="number"
-                          value={scriptDuration || ''}
-                          onChange={(e) => setScriptDuration(e.target.value ? Number(e.target.value) : undefined)}
-                          placeholder="Optional"
-                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Tone</label>
-                        <select
-                          value={scriptTone}
-                          onChange={(e) => setScriptTone(e.target.value)}
-                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        >
-                          <option value="conversational">Conversational</option>
-                          <option value="professional">Professional</option>
-                          <option value="energetic">Energetic</option>
-                          <option value="casual">Casual</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Target Audience</label>
-                        <select
-                          value={scriptAudience}
-                          onChange={(e) => setScriptAudience(e.target.value)}
-                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        >
-                          <option value="general">General</option>
-                          <option value="beginners">Beginners</option>
-                          <option value="professionals">Professionals</option>
-                          <option value="tech enthusiasts">Tech Enthusiasts</option>
-                          <option value="entrepreneurs">Entrepreneurs</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Script Structure</label>
-                      <select
-                        value={scriptStructure}
-                        onChange={(e) => setScriptStructure(e.target.value)}
-                        className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                      >
-                        <option value="standard">Standard (Hook → Intro → Main → CTA)</option>
-                        <option value="story-based">Story-Based (Hook → Setup → Conflict → Resolution)</option>
-                        <option value="tutorial">Tutorial (Hook → Problem → Steps → Summary)</option>
-                        <option value="listicle">Listicle (Hook → List Items → Conclusion)</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={scriptHook}
-                          onChange={(e) => setScriptHook(e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-300"
-                        />
-                        <span className="text-sm font-medium">Include Hook</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={scriptCta}
-                          onChange={(e) => setScriptCta(e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-300"
-                        />
-                        <span className="text-sm font-medium">Include Call-to-Action</span>
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Additional Instructions (Optional)</label>
-                      <textarea
-                        value={scriptInstructions}
-                        onChange={(e) => setScriptInstructions(e.target.value)}
-                        placeholder="e.g., Include code examples, mention specific tools..."
-                        rows={3}
-                        className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
-                    >
-                      {loading ? '⏳ Generating...' : '✨ Generate Script'}
-                    </button>
-                  </form>
-
-                  {scriptResponse && (
-                    <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      {scriptResponse.analytics_used && scriptResponse.channel_info && (
-                        <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                          <p className="font-semibold">✅ Analytics Applied</p>
-                          <p className="text-sm">
-                            Optimized for <strong>{scriptResponse.channel_info.channel_title}</strong>
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 mb-4">
-                        <button
-                          onClick={() => copyToClipboard(scriptResponse.result, setCopiedScript)}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          {copiedScript ? <Check size={16} /> : <Copy size={16} />}
-                          {copiedScript ? 'Copied!' : 'Copy'}
-                        </button>
-                        <button
-                          onClick={() => downloadAsPDF(scriptResponse.result, `Script-${scriptTopic}`)}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                        >
-                          <Download size={16} />
-                          Download PDF
-                        </button>
-                      </div>
-                      
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {scriptResponse.result}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Video Ideas Tab */}
+              {/* Script to Scene Tab */}
               {activeTab === 'ideas' && (
                 <div className="space-y-6">
                   <h2 className="text-2xl font-bold">💡 Video Ideas</h2>
