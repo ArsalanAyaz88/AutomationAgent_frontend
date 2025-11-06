@@ -288,6 +288,7 @@ export async function generateScriptWithAnalytics(
     additional_instructions?: string;
     use_analytics?: boolean;
     user_id?: string;
+    channel_id?: string;
   } = {}
 ): Promise<UnifiedResponse> {
   const response = await fetch(`${API_BASE_URL}/api/unified/generate-script`, {
@@ -308,6 +309,7 @@ export async function generateScriptWithAnalytics(
       additional_instructions: options.additional_instructions,
       use_analytics: options.use_analytics !== false,
       user_id: options.user_id || 'default',
+      channel_id: options.channel_id,
     }),
   });
 
@@ -329,6 +331,7 @@ export async function generateIdeasWithAnalytics(
     style?: string;
     use_analytics?: boolean;
     user_id?: string;
+    channel_id?: string;
   } = {}
 ): Promise<UnifiedResponse> {
   const response = await fetch(
@@ -344,6 +347,7 @@ export async function generateIdeasWithAnalytics(
         style: options.style || 'viral',
         use_analytics: options.use_analytics !== false,
         user_id: options.user_id || 'default',
+        channel_id: options.channel_id,
       }),
     }
   );
@@ -366,6 +370,7 @@ export async function generateTitlesWithAnalytics(
     title_count?: number;
     use_analytics?: boolean;
     user_id?: string;
+    channel_id?: string;
   } = {}
 ): Promise<UnifiedResponse> {
   const response = await fetch(`${API_BASE_URL}/api/unified/generate-titles`, {
@@ -379,6 +384,7 @@ export async function generateTitlesWithAnalytics(
       title_count: options.title_count || 5,
       use_analytics: options.use_analytics !== false,
       user_id: options.user_id || 'default',
+      channel_id: options.channel_id,
     }),
   });
 
@@ -400,6 +406,7 @@ export async function generateRoadmapWithAnalytics(
     focus_area?: string;
     use_analytics?: boolean;
     user_id?: string;
+    channel_id?: string;
   } = {}
 ): Promise<UnifiedResponse> {
   const response = await fetch(`${API_BASE_URL}/api/unified/generate-roadmap`, {
@@ -413,6 +420,7 @@ export async function generateRoadmapWithAnalytics(
       focus_area: options.focus_area,
       use_analytics: options.use_analytics !== false,
       user_id: options.user_id || 'default',
+      channel_id: options.channel_id,
     }),
   });
 

@@ -368,6 +368,7 @@ export default function AnalyticsDashboard() {
         include_cta: scriptCta,
         script_structure: scriptStructure,
         additional_instructions: scriptInstructions || undefined,
+        channel_id: selectedChannel?.channel_id,
       });
       setScriptResponse(result);
       setSuccess('✅ Script generated successfully!');
@@ -389,6 +390,7 @@ export default function AnalyticsDashboard() {
       const result = await generateIdeasWithAnalytics({
         video_count: ideasCount,
         style: ideasStyle,
+        channel_id: selectedChannel?.channel_id,
       });
       setIdeasResponse(result);
       setSuccess('✅ Video ideas generated!');
@@ -409,6 +411,7 @@ export default function AnalyticsDashboard() {
     try {
       const result = await generateTitlesWithAnalytics(titleDescription, {
         title_count: titleCount,
+        channel_id: selectedChannel?.channel_id,
       });
       setTitlesResponse(result);
       setSuccess('✅ Titles generated!');
@@ -430,6 +433,7 @@ export default function AnalyticsDashboard() {
       const result = await generateRoadmapWithAnalytics({
         video_count: roadmapVideos,
         timeframe_days: roadmapDays,
+        channel_id: selectedChannel?.channel_id,
       });
       setRoadmapResponse(result);
       setSuccess('✅ Roadmap generated!');
