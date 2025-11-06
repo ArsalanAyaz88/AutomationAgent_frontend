@@ -1333,6 +1333,14 @@ export default function AnalyticsDashboard() {
                     </div>
                   )}
 
+                  {/* Video Analytics Display - AI Data Source */}
+                  {titlesResponse?.video_analytics && titlesResponse?.channel_info && (
+                    <VideoAnalyticsDisplay
+                      videoAnalytics={titlesResponse.video_analytics}
+                      channelTitle={titlesResponse.channel_info.channel_title}
+                    />
+                  )}
+
                   <form onSubmit={handleGenerateTitles} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Video Description</label>
@@ -1401,14 +1409,6 @@ export default function AnalyticsDashboard() {
                           {titlesResponse.result}
                         </ReactMarkdown>
                       </div>
-
-                      {/* Video Analytics Display */}
-                      {titlesResponse.video_analytics && titlesResponse.channel_info && (
-                        <VideoAnalyticsDisplay
-                          videoAnalytics={titlesResponse.video_analytics}
-                          channelTitle={titlesResponse.channel_info.channel_title}
-                        />
-                      )}
                     </div>
                   )}
                 </div>
@@ -1450,6 +1450,14 @@ export default function AnalyticsDashboard() {
                         </div>
                       </div>
                     </div>
+                  )}
+
+                  {/* Video Analytics Display - AI Data Source */}
+                  {roadmapResponse?.video_analytics && roadmapResponse?.channel_info && (
+                    <VideoAnalyticsDisplay
+                      videoAnalytics={roadmapResponse.video_analytics}
+                      channelTitle={roadmapResponse.channel_info.channel_title}
+                    />
                   )}
 
                   <form onSubmit={handleGenerateRoadmap} className="space-y-4">
@@ -1521,14 +1529,6 @@ export default function AnalyticsDashboard() {
                           {roadmapResponse.result}
                         </ReactMarkdown>
                       </div>
-
-                      {/* Video Analytics Display */}
-                      {roadmapResponse.video_analytics && roadmapResponse.channel_info && (
-                        <VideoAnalyticsDisplay
-                          videoAnalytics={roadmapResponse.video_analytics}
-                          channelTitle={roadmapResponse.channel_info.channel_title}
-                        />
-                      )}
                     </div>
                   )}
                 </div>
