@@ -201,6 +201,16 @@ export async function trackAndGenerateIdeas(
 // UNIFIED ANALYTICS-AWARE AGENT ENDPOINTS
 // ============================================
 
+export interface VideoAnalyticsData {
+  rank: number;
+  title: string;
+  views: number;
+  likes: number;
+  comments: number;
+  engagement_rate: number;
+  published_at: string;
+}
+
 export interface UnifiedResponse {
   success: boolean;
   result: string;
@@ -215,6 +225,13 @@ export interface UnifiedResponse {
     avg_views?: number;
     avg_engagement?: number;
     last_updated?: string;
+  };
+  video_analytics?: {
+    total_videos_analyzed: number;
+    avg_views: number;
+    avg_engagement: number;
+    top_performing_videos: VideoAnalyticsData[];
+    high_engagement_videos: VideoAnalyticsData[];
   };
 }
 

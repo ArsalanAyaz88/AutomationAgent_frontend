@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
 import { Copy, Download, Check } from 'lucide-react';
+import VideoAnalyticsDisplay from '@/components/VideoAnalyticsDisplay';
 import {
   trackChannel,
   getTrackedChannels,
@@ -1057,6 +1058,14 @@ export default function AnalyticsDashboard() {
                           {scriptResponse.result}
                         </ReactMarkdown>
                       </div>
+
+                      {/* Video Analytics Display */}
+                      {scriptResponse.video_analytics && scriptResponse.channel_info && (
+                        <VideoAnalyticsDisplay
+                          videoAnalytics={scriptResponse.video_analytics}
+                          channelTitle={scriptResponse.channel_info.channel_title}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -1170,6 +1179,14 @@ export default function AnalyticsDashboard() {
                           {ideasResponse.result}
                         </ReactMarkdown>
                       </div>
+
+                      {/* Video Analytics Display */}
+                      {ideasResponse.video_analytics && ideasResponse.channel_info && (
+                        <VideoAnalyticsDisplay
+                          videoAnalytics={ideasResponse.video_analytics}
+                          channelTitle={ideasResponse.channel_info.channel_title}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -1281,6 +1298,14 @@ export default function AnalyticsDashboard() {
                           {titlesResponse.result}
                         </ReactMarkdown>
                       </div>
+
+                      {/* Video Analytics Display */}
+                      {titlesResponse.video_analytics && titlesResponse.channel_info && (
+                        <VideoAnalyticsDisplay
+                          videoAnalytics={titlesResponse.video_analytics}
+                          channelTitle={titlesResponse.channel_info.channel_title}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -1393,6 +1418,14 @@ export default function AnalyticsDashboard() {
                           {roadmapResponse.result}
                         </ReactMarkdown>
                       </div>
+
+                      {/* Video Analytics Display */}
+                      {roadmapResponse.video_analytics && roadmapResponse.channel_info && (
+                        <VideoAnalyticsDisplay
+                          videoAnalytics={roadmapResponse.video_analytics}
+                          channelTitle={roadmapResponse.channel_info.channel_title}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
