@@ -42,6 +42,11 @@ export interface TrackedChannel {
   created_at: string;
   last_accessed: string;
   tracking_enabled: boolean;
+  top_videos?: Array<{
+    title: string;
+    view_count: number;
+    video_id?: string;
+  }>;
 }
 
 export interface TrackedChannelsResponse {
@@ -146,6 +151,31 @@ export async function refreshChannelAnalytics(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to refresh analytics');
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete a tracked channel and its analytics data
+ */
+export async function deleteChannel(
+  channelId: string,
+  userId: string = 'default'
+): Promise<{ status: string; message: string }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/channel/tracked/${channelId}?user_id=${userId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to delete channel');
   }
 
   return response.json();

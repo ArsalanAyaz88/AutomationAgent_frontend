@@ -14,12 +14,13 @@ import {
   generateTitlesWithAnalytics,
   generateRoadmapWithAnalytics,
   refreshChannelAnalytics,
+  deleteChannel,
   type TrackedChannel,
   type AnalyticsStatus,
   type UnifiedResponse,
 } from '@/services/channelAnalytics';
 
-type TabType = 'overview' | 'script' | 'ideas' | 'titles' | 'roadmap';
+type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'roadmap';
 
 export default function AnalyticsDashboard() {
   // State management
@@ -62,6 +63,12 @@ export default function AnalyticsDashboard() {
   const [copiedIdeas, setCopiedIdeas] = useState(false);
   const [copiedTitles, setCopiedTitles] = useState(false);
   const [copiedRoadmap, setCopiedRoadmap] = useState(false);
+
+  // Channels management state
+  const [editingChannel, setEditingChannel] = useState<TrackedChannel | null>(null);
+  const [showChannelForm, setShowChannelForm] = useState(false);
+  const [newChannelUrl, setNewChannelUrl] = useState('');
+  const [newChannelNote, setNewChannelNote] = useState('');
 
   // Strip markdown formatting to get clean plain text
   const stripMarkdown = (text: string): string => {
@@ -202,6 +209,77 @@ export default function AnalyticsDashboard() {
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Failed to track channel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add new channel from Channels tab
+  const handleAddChannel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const result = await trackChannel(newChannelUrl);
+      setSuccess(
+        `✅ ${result.channel_title} added! (${result.subscriber_count?.toLocaleString()} subscribers)`
+      );
+      setNewChannelUrl('');
+      setNewChannelNote('');
+      setShowChannelForm(false);
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add channel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Select a channel as active
+  const handleSelectChannel = (channel: TrackedChannel) => {
+    setSelectedChannel(channel);
+    setSuccess(`✅ Now using: ${channel.channel_title}`);
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  // Delete a channel
+  const handleDeleteChannel = async (channelId: string) => {
+    if (!confirm('Are you sure you want to remove this channel?')) return;
+    
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      await deleteChannel(channelId);
+      setSuccess('✅ Channel removed successfully');
+      
+      // If deleted channel was selected, select first remaining channel
+      if (selectedChannel?.channel_id === channelId) {
+        const remaining = trackedChannels.filter(c => c.channel_id !== channelId);
+        setSelectedChannel(remaining.length > 0 ? remaining[0] : null);
+      }
+      
+      // Reload channels list
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete channel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh channel analytics
+  const handleRefreshChannel = async (channelId: string) => {
+    setLoading(true);
+    try {
+      await refreshChannelAnalytics(channelId);
+      await loadData();
+      setSuccess('✅ Channel data refreshed');
+    } catch (err: any) {
+      setError(err.message || 'Failed to refresh channel');
     } finally {
       setLoading(false);
     }
@@ -411,6 +489,7 @@ export default function AnalyticsDashboard() {
               <div className="flex flex-wrap gap-2">
                 {[
                   { id: 'overview', icon: '📊', label: 'Overview' },
+                  { id: 'channels', icon: '📺', label: 'Channels' },
                   { id: 'ideas', icon: '💡', label: 'Video Ideas' },
                   { id: 'titles', icon: '📌', label: 'Title Generator' },
                   { id: 'script', icon: '📝', label: 'Script Generator' },
@@ -499,6 +578,194 @@ export default function AnalyticsDashboard() {
                       </div>
                       <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                         All agents will use analytics from <strong>{selectedChannel.channel_title}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Channels Tab */}
+              {activeTab === 'channels' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold">📺 Manage Channels</h2>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Add, manage, and switch between your tracked YouTube channels
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowChannelForm(!showChannelForm)}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 font-semibold"
+                    >
+                      {showChannelForm ? '✕ Cancel' : '+ Add Channel'}
+                    </button>
+                  </div>
+
+                  {/* Add Channel Form */}
+                  {showChannelForm && (
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                      <h3 className="text-xl font-bold mb-4">Add New Channel</h3>
+                      <form onSubmit={handleAddChannel} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            YouTube Channel URL
+                          </label>
+                          <input
+                            type="text"
+                            value={newChannelUrl}
+                            onChange={(e) => setNewChannelUrl(e.target.value)}
+                            placeholder="https://youtube.com/@channel or video URL"
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+                            required
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Enter channel URL, video URL, or @handle
+                          </p>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
+                        >
+                          {loading ? '⏳ Adding...' : '✨ Add Channel'}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Channels List */}
+                  {trackedChannels.length > 0 ? (
+                    <div className="grid gap-4">
+                      {trackedChannels.map((channel) => (
+                        <div
+                          key={channel._id}
+                          className={`p-6 border-2 rounded-lg transition-all ${
+                            selectedChannel?._id === channel._id
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            {/* Channel Info */}
+                            <div className="flex items-start space-x-4">
+                              <img
+                                src={channel.thumbnail}
+                                alt={channel.channel_title}
+                                className="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 shadow-lg"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-bold text-2xl">{channel.channel_title}</h3>
+                                  {selectedChannel?._id === channel._id && (
+                                    <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">
+                                      ✓ ACTIVE
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                                  <div>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                      {channel.subscriber_count.toLocaleString()}
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">Subscribers</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                      {channel.video_count}
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">Videos</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                      {(channel.view_count / 1000000).toFixed(1)}M
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">Views</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                      {channel.top_videos?.length || 0}
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">Top Videos</p>
+                                  </div>
+                                </div>
+                                
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  📅 Last updated: {new Date(channel.last_accessed).toLocaleDateString()} at{' '}
+                                  {new Date(channel.last_accessed).toLocaleTimeString()}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  🆔 Channel ID: {channel.channel_id}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col gap-2 ml-4">
+                              {selectedChannel?._id !== channel._id && (
+                                <button
+                                  onClick={() => handleSelectChannel(channel)}
+                                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 font-semibold whitespace-nowrap"
+                                >
+                                  ✓ Select
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleRefreshChannel(channel.channel_id)}
+                                disabled={loading}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold whitespace-nowrap disabled:opacity-50"
+                              >
+                                🔄 Refresh
+                              </button>
+                              <button
+                                onClick={() => handleDeleteChannel(channel._id)}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold whitespace-nowrap"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Top Videos Preview */}
+                          {channel.top_videos && channel.top_videos.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                              <h4 className="font-semibold mb-2 text-sm">🔥 Top Performing Videos:</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {channel.top_videos.slice(0, 4).map((video: any, idx: number) => (
+                                  <div key={idx} className="text-xs bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
+                                    <p className="font-semibold truncate">{video.title}</p>
+                                    <p className="text-gray-500">
+                                      👁️ {(video.view_count || 0).toLocaleString()} views
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">
+                        📺 No channels tracked yet
+                      </p>
+                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+                        Click "Add Channel" to get started
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Active Channel Info */}
+                  {selectedChannel && (
+                    <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                      <h3 className="text-xl font-bold mb-2">✅ Active Channel for All Agents</h3>
+                      <p className="text-lg">
+                        <strong>{selectedChannel.channel_title}</strong>
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        All analytics-aware agents (Script, Ideas, Titles, Roadmap) will use data from this channel
                       </p>
                     </div>
                   )}
