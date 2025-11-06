@@ -40,6 +40,12 @@ export default function AnalyticsDashboard() {
   const [scriptTopic, setScriptTopic] = useState('');
   const [scriptWords, setScriptWords] = useState(1500);
   const [scriptTone, setScriptTone] = useState('conversational');
+  const [scriptAudience, setScriptAudience] = useState('general');
+  const [scriptDuration, setScriptDuration] = useState<number | undefined>(undefined);
+  const [scriptHook, setScriptHook] = useState(true);
+  const [scriptCta, setScriptCta] = useState(true);
+  const [scriptStructure, setScriptStructure] = useState('standard');
+  const [scriptInstructions, setScriptInstructions] = useState('');
   const [ideasCount, setIdeasCount] = useState(5);
   const [ideasStyle, setIdeasStyle] = useState('viral');
   const [titleDescription, setTitleDescription] = useState('');
@@ -100,6 +106,12 @@ export default function AnalyticsDashboard() {
       const result = await generateScriptWithAnalytics(scriptTopic, {
         total_words: scriptWords,
         tone: scriptTone,
+        target_audience: scriptAudience,
+        video_duration: scriptDuration,
+        include_hook: scriptHook,
+        include_cta: scriptCta,
+        script_structure: scriptStructure,
+        additional_instructions: scriptInstructions || undefined,
       });
       setScriptResponse(result);
       setSuccess('✅ Script generated successfully!');
@@ -413,6 +425,19 @@ export default function AnalyticsDashboard() {
                         />
                       </div>
                       <div>
+                        <label className="block text-sm font-medium mb-2">Video Duration (min)</label>
+                        <input
+                          type="number"
+                          value={scriptDuration || ''}
+                          onChange={(e) => setScriptDuration(e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="Optional"
+                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
                         <label className="block text-sm font-medium mb-2">Tone</label>
                         <select
                           value={scriptTone}
@@ -425,6 +450,66 @@ export default function AnalyticsDashboard() {
                           <option value="casual">Casual</option>
                         </select>
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Target Audience</label>
+                        <select
+                          value={scriptAudience}
+                          onChange={(e) => setScriptAudience(e.target.value)}
+                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                        >
+                          <option value="general">General</option>
+                          <option value="beginners">Beginners</option>
+                          <option value="professionals">Professionals</option>
+                          <option value="tech enthusiasts">Tech Enthusiasts</option>
+                          <option value="entrepreneurs">Entrepreneurs</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Script Structure</label>
+                      <select
+                        value={scriptStructure}
+                        onChange={(e) => setScriptStructure(e.target.value)}
+                        className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                      >
+                        <option value="standard">Standard (Hook → Intro → Main → CTA)</option>
+                        <option value="story-based">Story-Based (Hook → Setup → Conflict → Resolution)</option>
+                        <option value="tutorial">Tutorial (Hook → Problem → Steps → Summary)</option>
+                        <option value="listicle">Listicle (Hook → List Items → Conclusion)</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={scriptHook}
+                          onChange={(e) => setScriptHook(e.target.checked)}
+                          className="w-5 h-5 rounded border-gray-300"
+                        />
+                        <span className="text-sm font-medium">Include Hook</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={scriptCta}
+                          onChange={(e) => setScriptCta(e.target.checked)}
+                          className="w-5 h-5 rounded border-gray-300"
+                        />
+                        <span className="text-sm font-medium">Include Call-to-Action</span>
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Additional Instructions (Optional)</label>
+                      <textarea
+                        value={scriptInstructions}
+                        onChange={(e) => setScriptInstructions(e.target.value)}
+                        placeholder="e.g., Include code examples, mention specific tools..."
+                        rows={3}
+                        className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                      />
                     </div>
 
                     <button

@@ -230,7 +230,13 @@ export async function generateScriptWithAnalytics(
   options: {
     total_words?: number;
     tone?: string;
+    target_audience?: string;
+    video_duration?: number;
+    include_hook?: boolean;
+    include_cta?: boolean;
+    script_structure?: string;
     key_points?: string[];
+    additional_instructions?: string;
     use_analytics?: boolean;
     user_id?: string;
   } = {}
@@ -244,7 +250,13 @@ export async function generateScriptWithAnalytics(
       topic,
       total_words: options.total_words || 1500,
       tone: options.tone || 'conversational',
+      target_audience: options.target_audience || 'general',
+      video_duration: options.video_duration,
+      include_hook: options.include_hook !== false,
+      include_cta: options.include_cta !== false,
+      script_structure: options.script_structure || 'standard',
       key_points: options.key_points,
+      additional_instructions: options.additional_instructions,
       use_analytics: options.use_analytics !== false,
       user_id: options.user_id || 'default',
     }),
