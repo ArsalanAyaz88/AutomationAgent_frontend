@@ -400,6 +400,16 @@ export default function CommandCenter() {
             </div>
             
             <div className="flex items-center gap-6">
+              {/* Analytics Dashboard Button */}
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-military-orange/30 bg-military-orange/10 hover:bg-military-orange/20 transition-colors"
+                title="View Analytics Dashboard"
+              >
+                <Terminal className="w-4 h-4 text-military-orange" />
+                <span className="text-sm font-mono text-military-orange">ANALYTICS</span>
+              </button>
+
               {/* RL System Button */}
               <button
                 onClick={() => router.push('/rl-system')}

@@ -3,7 +3,10 @@
  * Handles YouTube channel tracking and video idea generation
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://automation-agent-backend.vercel.app' 
+    : 'http://localhost:8000');
 
 export interface ChannelTrackResponse {
   status: string;
