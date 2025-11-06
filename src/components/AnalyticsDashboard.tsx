@@ -21,7 +21,7 @@ import {
   type UnifiedResponse,
 } from '@/services/channelAnalytics';
 
-type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'roadmap';
+type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'script' | 'scriptToScene' | 'roadmap';
 
 export default function AnalyticsDashboard() {
   // State management
@@ -29,7 +29,7 @@ export default function AnalyticsDashboard() {
     if (typeof window !== 'undefined') {
       // Restore saved tab from localStorage, default to 'channels' for first visit
       const savedTab = window.localStorage.getItem('activeTab');
-      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'script', 'roadmap'].includes(savedTab)) {
+      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'script', 'scriptToScene', 'roadmap'].includes(savedTab)) {
         return savedTab as TabType;
       }
     }
@@ -67,6 +67,14 @@ export default function AnalyticsDashboard() {
   const [titleCount, setTitleCount] = useState(5);
   const [roadmapVideos, setRoadmapVideos] = useState(30);
   const [roadmapDays, setRoadmapDays] = useState(90);
+
+  // Script to Scene state
+  const [uploadedScripts, setUploadedScripts] = useState<any[]>([]);
+  const [selectedScript, setSelectedScript] = useState<any | null>(null);
+  const [sceneResponse, setSceneResponse] = useState<UnifiedResponse | null>(null);
+  const [uploadMode, setUploadMode] = useState<'pdf' | 'text'>('pdf');
+  const [textScriptTitle, setTextScriptTitle] = useState('');
+  const [textScriptContent, setTextScriptContent] = useState('');
 
   // Copy/Download state
   const [copiedScript, setCopiedScript] = useState(false);
@@ -459,6 +467,142 @@ export default function AnalyticsDashboard() {
     }
   };
 
+  // Script to Scene handlers
+  const fetchScripts = async () => {
+    try {
+      const response = await fetch('/api/unified/get-scripts?user_id=default');
+      const data = await response.json();
+      if (data.success) {
+        setUploadedScripts(data.scripts || []);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch scripts:', err);
+    }
+  };
+
+  const handleUploadPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('user_id', 'default');
+
+      const response = await fetch('/api/unified/upload-script-pdf?user_id=default', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(data.message);
+        await fetchScripts();
+      } else {
+        setError(data.error || 'Upload failed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload PDF');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadText = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/unified/upload-script-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          script_title: textScriptTitle,
+          script_content: textScriptContent,
+          user_id: 'default',
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(data.message);
+        setTextScriptTitle('');
+        setTextScriptContent('');
+        await fetchScripts();
+      } else {
+        setError(data.error || 'Upload failed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload text');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConvertToScene = async (scriptId: string) => {
+    setLoading(true);
+    setError('');
+    setSceneResponse(null);
+    try {
+      const response = await fetch('/api/unified/script-to-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          script_id: scriptId,
+          user_id: 'default',
+          user_query: 'Convert this script into detailed scene-by-scene prompts',
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSceneResponse(data);
+        setSuccess('✅ Scenes generated successfully!');
+      } else {
+        setError(data.error || 'Scene conversion failed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to convert script');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteScript = async (scriptId: string) => {
+    if (!confirm('Delete this script?')) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/unified/delete-script/${scriptId}?user_id=default`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('Script deleted');
+        await fetchScripts();
+        if (selectedScript?.script_id === scriptId) {
+          setSelectedScript(null);
+          setSceneResponse(null);
+        }
+      } else {
+        setError(data.error || 'Delete failed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete script');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load scripts when Script to Scene tab is opened
+  useEffect(() => {
+    if (activeTab === 'scriptToScene') {
+      fetchScripts();
+    }
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -564,6 +708,7 @@ export default function AnalyticsDashboard() {
                   { id: 'ideas', icon: '💡', label: 'Video Ideas' },
                   { id: 'titles', icon: '📌', label: 'Title Generator' },
                   { id: 'script', icon: '📝', label: 'Script Generator' },
+                  { id: 'scriptToScene', icon: '🎬', label: 'Script to Scene' },
                   { id: 'roadmap', icon: '🗺️', label: 'Content Roadmap' },
                 ].map((tab) => (
                   <button
@@ -1062,14 +1207,6 @@ export default function AnalyticsDashboard() {
                           {scriptResponse.result}
                         </ReactMarkdown>
                       </div>
-
-                      {/* Video Analytics Display */}
-                      {scriptResponse.video_analytics && scriptResponse.channel_info && (
-                        <VideoAnalyticsDisplay
-                          videoAnalytics={scriptResponse.video_analytics}
-                          channelTitle={scriptResponse.channel_info.channel_title}
-                        />
-                      )}
                     </div>
                   )}
                 </div>
@@ -1527,6 +1664,180 @@ export default function AnalyticsDashboard() {
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {roadmapResponse.result}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Script to Scene Tab */}
+              {activeTab === 'scriptToScene' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold">🎬 Script to Scene Converter</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Upload your script and convert it into detailed scene-by-scene video generation prompts
+                  </p>
+
+                  {/* Upload Section */}
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-700">
+                    <h3 className="text-xl font-bold mb-4">📤 Upload Script</h3>
+                    
+                    {/* Upload Mode Selector */}
+                    <div className="flex gap-4 mb-4">
+                      <button
+                        onClick={() => setUploadMode('pdf')}
+                        className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                          uploadMode === 'pdf'
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                      >
+                        📄 PDF Upload
+                      </button>
+                      <button
+                        onClick={() => setUploadMode('text')}
+                        className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                          uploadMode === 'text'
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                      >
+                        📝 Text Upload
+                      </button>
+                    </div>
+
+                    {/* PDF Upload */}
+                    {uploadMode === 'pdf' && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Upload PDF Script</label>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleUploadPDF}
+                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                          disabled={loading}
+                        />
+                        <p className="text-xs text-gray-500 mt-2">Only PDF files are supported</p>
+                      </div>
+                    )}
+
+                    {/* Text Upload */}
+                    {uploadMode === 'text' && (
+                      <form onSubmit={handleUploadText} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Script Title</label>
+                          <input
+                            type="text"
+                            value={textScriptTitle}
+                            onChange={(e) => setTextScriptTitle(e.target.value)}
+                            placeholder="Enter script title..."
+                            className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Script Content</label>
+                          <textarea
+                            value={textScriptContent}
+                            onChange={(e) => setTextScriptContent(e.target.value)}
+                            placeholder="Paste your script here..."
+                            rows={10}
+                            className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                            required
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 disabled:opacity-50"
+                        >
+                          {loading ? '⏳ Uploading...' : '📤 Upload Script'}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+
+                  {/* Uploaded Scripts List */}
+                  {uploadedScripts.length > 0 && (
+                    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-700">
+                      <h3 className="text-xl font-bold mb-4">📚 Your Scripts ({uploadedScripts.length})</h3>
+                      <div className="space-y-4">
+                        {uploadedScripts.map((script) => (
+                          <div
+                            key={script.script_id}
+                            className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-bold text-lg">{script.script_title}</h4>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(script.uploaded_at).toLocaleString()} • 
+                                  {script.file_type === 'pdf' ? ' 📄 PDF' : ' 📝 Text'}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setSelectedScript(script);
+                                    handleConvertToScene(script.script_id);
+                                  }}
+                                  disabled={loading}
+                                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                                >
+                                  🎬 Convert to Scenes
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteScript(script.script_id)}
+                                  disabled={loading}
+                                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Scene Output */}
+                  {sceneResponse && (
+                    <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      {sceneResponse.success && selectedScript && (
+                        <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="font-semibold">✅ Scenes Generated</p>
+                          <p className="text-sm">
+                            Converted: <strong>{selectedScript.script_title}</strong>
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(sceneResponse.result);
+                            setSuccess('✅ Copied to clipboard!');
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          <Copy size={16} />
+                          Copy Scenes
+                        </button>
+                        <button
+                          onClick={() => downloadAsPDF(sceneResponse.result, `Scenes-${selectedScript?.script_title || 'output'}`)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          <Download size={16} />
+                          Download PDF
+                        </button>
+                      </div>
+                      
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {sceneResponse.result}
                         </ReactMarkdown>
                       </div>
                     </div>
