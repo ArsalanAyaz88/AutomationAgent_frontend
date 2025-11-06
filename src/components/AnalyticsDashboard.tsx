@@ -488,8 +488,9 @@ export default function AnalyticsDashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2">
               <div className="flex flex-wrap gap-2">
                 {[
-                  { id: 'overview', icon: '📊', label: 'Overview' },
                   { id: 'channels', icon: '📺', label: 'Channels' },
+                  { id: 'overview', icon: '📊', label: 'Overview' },
+                  
                   { id: 'ideas', icon: '💡', label: 'Video Ideas' },
                   { id: 'titles', icon: '📌', label: 'Title Generator' },
                   { id: 'script', icon: '📝', label: 'Script Generator' },
@@ -517,67 +518,94 @@ export default function AnalyticsDashboard() {
                 <div className="space-y-6">
                   <h2 className="text-2xl font-bold">📊 Channel Overview</h2>
                   
-                  {trackedChannels.length > 0 && (
-                    <div className="grid gap-4">
-                      {trackedChannels.map((channel) => (
-                        <div
-                          key={channel._id}
-                          className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <img
-                              src={channel.thumbnail}
-                              alt={channel.channel_title}
-                              className="w-20 h-20 rounded-full"
-                            />
-                            <div>
-                              <h3 className="font-bold text-xl">{channel.channel_title}</h3>
-                              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                <p>👥 {channel.subscriber_count.toLocaleString()} subscribers</p>
-                                <p>📹 {channel.video_count} videos</p>
-                                <p>👁️ {channel.view_count.toLocaleString()} total views</p>
-                                <p className="text-xs">
-                                  Last accessed: {new Date(channel.last_accessed).toLocaleDateString()}
-                                </p>
-                              </div>
+                  {selectedChannel ? (
+                    <div className="space-y-6">
+                      {/* Selected Channel Card */}
+                      <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border-2 border-blue-300 dark:border-blue-700">
+                        <div className="flex items-center space-x-6 mb-6">
+                          <img
+                            src={selectedChannel.thumbnail}
+                            alt={selectedChannel.channel_title}
+                            className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-xl"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-3xl font-bold">{selectedChannel.channel_title}</h3>
+                              <span className="px-3 py-1 bg-green-500 text-white text-sm font-bold rounded-full">
+                                ✓ ACTIVE
+                              </span>
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400">
+                              All analytics-aware agents are using this channel's data
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                              🆔 Channel ID: {selectedChannel.channel_id}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500">
+                              📅 Last updated: {new Date(selectedChannel.last_accessed).toLocaleDateString()} at{' '}
+                              {new Date(selectedChannel.last_accessed).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Statistics Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                          <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                            <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                              {selectedChannel.subscriber_count.toLocaleString()}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Subscribers</p>
+                          </div>
+                          <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                            <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
+                              {selectedChannel.video_count}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Videos</p>
+                          </div>
+                          <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                            <p className="text-4xl font-bold text-orange-600 dark:text-orange-400">
+                              {(selectedChannel.view_count / 1000000).toFixed(1)}M
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Total Views</p>
+                          </div>
+                          <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                            <p className="text-4xl font-bold text-green-600 dark:text-green-400">✅</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">AI Ready</p>
+                          </div>
+                        </div>
+
+                        {/* Top Videos Preview */}
+                        {selectedChannel.top_videos && selectedChannel.top_videos.length > 0 && (
+                          <div className="mt-6 pt-6 border-t border-blue-200 dark:border-blue-800">
+                            <h4 className="font-semibold mb-4 text-lg">🔥 Top Performing Videos:</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {selectedChannel.top_videos.slice(0, 4).map((video: any, idx: number) => (
+                                <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                                  <p className="font-semibold mb-1 line-clamp-2">{video.title}</p>
+                                  <p className="text-sm text-gray-500">
+                                    👁️ {(video.view_count || 0).toLocaleString()} views
+                                  </p>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => setSelectedChannel(channel)}
-                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                            >
-                              Select
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {selectedChannel && (
-                    <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
-                      <h3 className="text-xl font-bold mb-4">✅ Active Channel</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold">{selectedChannel.subscriber_count.toLocaleString()}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Subscribers</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-3xl font-bold">{selectedChannel.video_count}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Videos</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-3xl font-bold">{(selectedChannel.view_count / 1000000).toFixed(1)}M</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Total Views</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-3xl font-bold">✅</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">AI Ready</p>
-                        </div>
+                        )}
                       </div>
-                      <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                        All agents will use analytics from <strong>{selectedChannel.channel_title}</strong>
+
+                      {/* Info Box */}
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-center text-gray-700 dark:text-gray-300">
+                          💡 To manage multiple channels or switch to a different channel, go to the <strong>Channels</strong> tab
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
+                        📺 No channel selected
+                      </p>
+                      <p className="text-gray-400 dark:text-gray-500 text-sm">
+                        Go to the <strong>Channels</strong> tab to select or add a channel
                       </p>
                     </div>
                   )}
