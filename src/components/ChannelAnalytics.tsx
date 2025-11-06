@@ -106,12 +106,12 @@ export default function ChannelAnalytics() {
               id="channelUrl"
               value={channelUrl}
               onChange={(e) => setChannelUrl(e.target.value)}
-              placeholder="https://www.youtube.com/@YourChannel"
+              placeholder="Paste channel or video URL here..."
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700"
               required
             />
             <p className="text-sm text-gray-500 mt-1">
-              Examples: youtube.com/@MrBeast, youtube.com/channel/UC...
+              ✨ <strong>New:</strong> Paste any YouTube link - channel page or video URL works!
             </p>
           </div>
 

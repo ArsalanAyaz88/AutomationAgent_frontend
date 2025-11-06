@@ -248,10 +248,13 @@ export default function AnalyticsDashboard() {
                   type="text"
                   value={channelUrl}
                   onChange={(e) => setChannelUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/@YourChannel"
+                  placeholder="Paste channel or video URL here..."
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
                   required
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  ✨ <strong>Supports both:</strong> Channel URLs (@MrBeast) or Video URLs (youtube.com/watch?v=...)
+                </p>
               </div>
               <button
                 type="submit"
