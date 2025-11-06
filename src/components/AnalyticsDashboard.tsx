@@ -411,9 +411,9 @@ export default function AnalyticsDashboard() {
               <div className="flex flex-wrap gap-2">
                 {[
                   { id: 'overview', icon: '📊', label: 'Overview' },
-                  { id: 'script', icon: '📝', label: 'Script Generator' },
                   { id: 'ideas', icon: '💡', label: 'Video Ideas' },
                   { id: 'titles', icon: '📌', label: 'Title Generator' },
+                  { id: 'script', icon: '📝', label: 'Script Generator' },
                   { id: 'roadmap', icon: '🗺️', label: 'Content Roadmap' },
                 ].map((tab) => (
                   <button
