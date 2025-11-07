@@ -49,6 +49,11 @@ export default function CommandCenter() {
   const [copiedResponseId, setCopiedResponseId] = useState<string | null>(null);
   const [isResponseViewModalOpen, setIsResponseViewModalOpen] = useState(false);
 
+  // Auto-redirect to dashboard on mount
+  useEffect(() => {
+    router.push('/dashboard');
+  }, [router]);
+
   // Check API health on mount
   useEffect(() => {
     const checkApiHealth = async () => {
@@ -343,7 +348,7 @@ export default function CommandCenter() {
             }
             // Use a slight delay to ensure sessionStorage is set
             setTimeout(() => {
-              router.push('/agents');
+              router.push('/dashboard');
             }, 10);
           }}
           className="group inline-flex items-center gap-3 px-8 py-3 rounded-md border border-military-green text-military-dark bg-military-green hover:bg-military-green/90 transition-colors font-mono uppercase tracking-wide text-sm shadow-[0_0_20px_rgba(0,255,65,0.15)]"
