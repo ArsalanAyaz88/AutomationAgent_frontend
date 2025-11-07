@@ -887,7 +887,7 @@ export default function AnalyticsDashboard() {
         {analyticsStatus?.has_analytics && (
           <>
             {/* Tab Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-transparent dark:bg-transparent rounded-none shadow-none p-6">
               {/* Overview Tab */}
               {activeTab === 'overview' && (
                 <div className="space-y-6">
@@ -1467,7 +1467,7 @@ export default function AnalyticsDashboard() {
               {activeTab === 'scriptwriter' && (
                 <div className="h-full flex flex-col">
                   {/* Header */}
-                  <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between p-6 border-b-0">
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scriptwriter</h1>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -1542,7 +1542,7 @@ export default function AnalyticsDashboard() {
                   </div>
 
                   {/* Input Area */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 p-6">
+                  <div className="pt-6">
                     <div className="max-w-4xl mx-auto">
                       <div className="relative">
                         <div className="flex items-end gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
@@ -1589,7 +1589,7 @@ export default function AnalyticsDashboard() {
               {activeTab === 'scene-writer' && (
                 <div className="h-full flex flex-col">
                   {/* Header */}
-                  <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between p-6 border-b-0">
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scene Writer</h1>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -1667,7 +1667,7 @@ export default function AnalyticsDashboard() {
                   </div>
 
                   {/* Input Area */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 p-6">
+                  <div className="pt-6">
                     <div className="max-w-4xl mx-auto">
                       <div className="relative">
                         <div className="flex items-end gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
