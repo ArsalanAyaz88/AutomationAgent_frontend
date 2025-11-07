@@ -47,6 +47,11 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Analytics state
   const [analyticsStatus, setAnalyticsStatus] = useState<AnalyticsStatus | null>(null);
@@ -627,12 +632,19 @@ export default function AnalyticsDashboard() {
             { id: 'roadmap', icon: Map, label: 'Content Roadmap' },
           ].map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const isActive = mounted && activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
+                onClick={() => {
+                  setActiveTab(tab.id as TabType);
+                  if (typeof window !== 'undefined') {
+                    window.localStorage.setItem('activeTab', tab.id as string);
+                  }
+                }}
                 aria-current={isActive ? 'page' : undefined}
+                data-tab={tab.id}
+                data-active={isActive ? 'true' : 'false'}
                 className={
                   'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none'
                 }
