@@ -29,8 +29,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     : 'http://localhost:8000');
 
 type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap' | 'scriptwriter' | 'scene-writer';
-type AgentType = 'scriptwriter' | 'scene-writer';
-type ChatSession = { id: string; agent: AgentType; title: string; updatedAt: string };
 
 export default function AnalyticsDashboard() {
   const router = useRouter();
@@ -50,32 +48,10 @@ export default function AnalyticsDashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [mounted, setMounted] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<AgentType>('scriptwriter');
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Load chat sessions from localStorage
-  useEffect(() => {
-    try {
-      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('chat_sessions_v1') : null;
-      if (raw) {
-        const parsed = JSON.parse(raw) as ChatSession[];
-        setChatSessions(parsed);
-      }
-    } catch {}
-  }, []);
-
-  const persistSessions = (sessions: ChatSession[]) => {
-    setChatSessions(sessions);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('chat_sessions_v1', JSON.stringify(sessions));
-    }
-  };
-
-  const genSessionId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   
   // Analytics state
   const [analyticsStatus, setAnalyticsStatus] = useState<AnalyticsStatus | null>(null);
@@ -129,6 +105,11 @@ export default function AnalyticsDashboard() {
   const [sceneWriterMessages, setSceneWriterMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [sceneWriterSessionId, setSceneWriterSessionId] = useState<string | null>(null);
 
+  type ChatSession = { session_id: string; last_activity?: string; preview?: string };
+  const [scriptwriterSessions, setScriptwriterSessions] = useState<ChatSession[]>([]);
+  const [sceneWriterSessions, setSceneWriterSessions] = useState<ChatSession[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+
   // Strip markdown formatting to get clean plain text
   const stripMarkdown = (text: string): string => {
     let cleanText = text;
@@ -178,6 +159,60 @@ export default function AnalyticsDashboard() {
     cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
     
     return cleanText.trim();
+  };
+
+  const loadChatSessions = async () => {
+    try {
+      setLoadingSessions(true);
+      const [swRes, scRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/unified/list-scriptwriter-sessions?user_id=default`).then(r => r.json()),
+        fetch(`${API_BASE_URL}/api/unified/list-scene-writer-sessions?user_id=default`).then(r => r.json()),
+      ]);
+      if (swRes && swRes.success) setScriptwriterSessions(swRes.sessions || []);
+      if (scRes && scRes.success) setSceneWriterSessions(scRes.sessions || []);
+    } catch (e) {
+      console.error('Failed to load chat sessions', e);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const fetchScriptwriterChat = async (sessionId: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/unified/get-scriptwriter-chat/${sessionId}?user_id=default`);
+      const data = await res.json();
+      if (data && data.success) {
+        const msgs = (data.messages || []).map((m: any) => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, content: m.content }));
+        setScriptwriterMessages(msgs);
+        setScriptwriterSessionId(data.session_id || sessionId);
+      }
+    } catch (e) {
+      console.error('Failed to fetch scriptwriter chat', e);
+    }
+  };
+
+  const fetchSceneWriterChat = async (sessionId: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/unified/get-scene-writer-chat/${sessionId}?user_id=default`);
+      const data = await res.json();
+      if (data && data.success) {
+        const msgs = (data.messages || []).map((m: any) => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, content: m.content }));
+        setSceneWriterMessages(msgs);
+        setSceneWriterSessionId(data.session_id || sessionId);
+      }
+    } catch (e) {
+      console.error('Failed to fetch scene-writer chat', e);
+    }
+  };
+
+  const openScriptwriterSession = async (sessionId: string) => {
+    setActiveTab('scriptwriter');
+    await fetchScriptwriterChat(sessionId);
+  };
+
+  const openSceneWriterSession = async (sessionId: string) => {
+    setActiveTab('scene-writer');
+    await fetchSceneWriterChat(sessionId);
   };
 
   // Copy to clipboard function
@@ -241,6 +276,10 @@ export default function AnalyticsDashboard() {
   // Load initial data
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    loadChatSessions();
   }, []);
 
   const loadData = async () => {
@@ -512,9 +551,6 @@ export default function AnalyticsDashboard() {
     
     const userMessage = scriptwriterInput.trim();
     setScriptwriterInput('');
-    // Ensure we have a session id for persistence
-    let sid = scriptwriterSessionId || genSessionId();
-    if (!scriptwriterSessionId) setScriptwriterSessionId(sid);
     
     // Add user message to UI
     setScriptwriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -527,7 +563,7 @@ export default function AnalyticsDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          session_id: sid,
+          session_id: scriptwriterSessionId,
           user_id: 'default',
           channel_id: selectedChannel?.channel_id
         })
@@ -538,19 +574,12 @@ export default function AnalyticsDashboard() {
       if (data.success) {
         // Add assistant response to UI
         setScriptwriterMessages(prev => [...prev, { role: 'assistant', content: data.result }]);
-        // Save/update session directory
-        try {
-          const title = userMessage.slice(0, 40);
-          const now = new Date().toISOString();
-          const updated = [...chatSessions];
-          const idx = updated.findIndex(s => s.id === sid);
-          if (idx >= 0) {
-            updated[idx] = { ...updated[idx], title, updatedAt: now };
-          } else {
-            updated.unshift({ id: sid, agent: 'scriptwriter', title, updatedAt: now });
-          }
-          persistSessions(updated.slice(0, 50));
-        } catch {}
+        
+        // Store session_id if first message
+        if (!scriptwriterSessionId && data.session_id) {
+          setScriptwriterSessionId(data.session_id);
+        }
+        loadChatSessions();
       } else {
         setError(data.error || 'Chat failed');
       }
@@ -586,8 +615,6 @@ export default function AnalyticsDashboard() {
     
     const userMessage = sceneWriterInput.trim();
     setSceneWriterInput('');
-    let sid = sceneWriterSessionId || genSessionId();
-    if (!sceneWriterSessionId) setSceneWriterSessionId(sid);
     
     // Add user message to UI
     setSceneWriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -600,7 +627,7 @@ export default function AnalyticsDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          session_id: sid,
+          session_id: sceneWriterSessionId,
           user_id: 'default',
           script_context: null
         })
@@ -611,19 +638,12 @@ export default function AnalyticsDashboard() {
       if (data.success) {
         // Add assistant response to UI
         setSceneWriterMessages(prev => [...prev, { role: 'assistant', content: data.result }]);
-        // Save/update session directory
-        try {
-          const title = userMessage.slice(0, 40);
-          const now = new Date().toISOString();
-          const updated = [...chatSessions];
-          const idx = updated.findIndex(s => s.id === sid);
-          if (idx >= 0) {
-            updated[idx] = { ...updated[idx], title, updatedAt: now };
-          } else {
-            updated.unshift({ id: sid, agent: 'scene-writer', title, updatedAt: now });
-          }
-          persistSessions(updated.slice(0, 50));
-        } catch {}
+        
+        // Store session_id if first message
+        if (!sceneWriterSessionId && data.session_id) {
+          setSceneWriterSessionId(data.session_id);
+        }
+        loadChatSessions();
       } else {
         setError(data.error || 'Chat failed');
       }
@@ -631,50 +651,6 @@ export default function AnalyticsDashboard() {
       setError(err.message || 'Failed to send message');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // New Chat action
-  const handleNewChat = () => {
-    if (selectedAgent === 'scriptwriter') {
-      setScriptwriterMessages([]);
-      setScriptwriterSessionId(null);
-      setActiveTab('scriptwriter');
-    } else {
-      setSceneWriterMessages([]);
-      setSceneWriterSessionId(null);
-      setActiveTab('scene-writer');
-    }
-  };
-
-  // Open a saved session
-  const openSession = async (s: ChatSession) => {
-    try {
-      if (s.agent === 'scriptwriter') {
-        setActiveTab('scriptwriter');
-        setScriptwriterSessionId(s.id);
-        const r = await fetch(`${API_BASE_URL}/api/unified/get-scriptwriter-chat/${s.id}?user_id=default`);
-        const d = await r.json();
-        if (d.success && Array.isArray(d.messages)) {
-          const msgs = d.messages.map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-          setScriptwriterMessages(msgs);
-        } else {
-          setScriptwriterMessages([]);
-        }
-      } else {
-        setActiveTab('scene-writer');
-        setSceneWriterSessionId(s.id);
-        const r = await fetch(`${API_BASE_URL}/api/unified/get-scene-writer-chat/${s.id}?user_id=default`);
-        const d = await r.json();
-        if (d.success && Array.isArray(d.messages)) {
-          const msgs = d.messages.map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-          setSceneWriterMessages(msgs);
-        } else {
-          setSceneWriterMessages([]);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to open session', e);
     }
   };
   
@@ -702,108 +678,123 @@ export default function AnalyticsDashboard() {
       {/* Left Sidebar */}
       <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         {/* Logo/Title */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            YouTube AI
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Analytics Dashboard
-          </p>
-        </div>
-
-        {/* Agents + New Chat + History */}
-        <div className="p-4 space-y-3 border-b border-gray-200 dark:border-gray-700">
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center justify-between gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="New Chat"
-          >
-            <span className="font-semibold">New Chat</span>
-            <span className="text-xs opacity-70">Ctrl K</span>
-          </button>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Agents</label>
-            <select
-              value={selectedAgent}
-              onChange={(e) => setSelectedAgent(e.target.value as AgentType)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700"
-            >
-              <option value="scriptwriter">Scriptwriter</option>
-              <option value="scene-writer">Scene Writer</option>
-            </select>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
-              <span>Chat History</span>
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">Y</span>
             </div>
-            <div className="space-y-1 max-h-56 overflow-auto pr-1">
-              {chatSessions.length === 0 && (
-                <div className="text-xs text-gray-400">Log in to sync chat history</div>
-              )}
-              {chatSessions.map((s) => (
-                <button
-                  key={`${s.agent}-${s.id}`}
-                  onClick={() => openSession(s)}
-                  className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent"
-                  title={s.title}
-                >
-                  <div className="text-xs uppercase tracking-wide text-gray-400">{s.agent === 'scriptwriter' ? 'Scriptwriter' : 'Scene Writer'}</div>
-                  <div className="text-sm truncate text-gray-800 dark:text-gray-100">{s.title || 'Untitled'}</div>
-                </button>
-              ))}
-            </div>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+              YouTube AI
+            </h1>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {[
-            { id: 'channels', icon: Tv, label: 'Channels' },
-            { id: 'overview', icon: BarChart3, label: 'Overview' },
-            { id: 'ideas', icon: Lightbulb, label: 'Video Ideas' },
-            { id: 'titles', icon: Hash, label: 'Title Generator' },
-            { id: 'roadmap', icon: Map, label: 'Content Roadmap' },
-            { id: 'scriptwriter', icon: MessageSquare, label: 'Scriptwriter Chat' },
-            { id: 'scene-writer', icon: Film, label: 'Scene Writer' },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = mounted && activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id as TabType);
-                  if (typeof window !== 'undefined') {
-                    window.localStorage.setItem('activeTab', tab.id as string);
-                  }
-                }}
-                aria-current={isActive ? 'page' : undefined}
-                data-tab={tab.id}
-                data-active={isActive ? 'true' : 'false'}
-                className={
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none'
-                }
-                style={
-                  isActive
-                    ? {
-                        background: 'linear-gradient(to right, rgb(37 99 235), rgb(147 51 234))',
-                        color: '#ffffff',
-                      }
-                    : {
-                        background: 'none',
-                        backgroundImage: 'none',
-                        backgroundColor: 'transparent',
-                      }
-                }
-              >
-                <Icon className="w-5 h-5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <nav className="px-3 py-2">
+          <div className="space-y-1">
+            {[
+              { id: 'channels', icon: Tv, label: 'Channels' },
+              { id: 'overview', icon: BarChart3, label: 'Overview' },
+              { id: 'ideas', icon: Lightbulb, label: 'Video Ideas' },
+              { id: 'titles', icon: Hash, label: 'Title Generator' },
+              { id: 'roadmap', icon: Map, label: 'Content Roadmap' },
+              { id: 'scriptwriter', icon: MessageSquare, label: 'Scriptwriter Chat' },
+              { id: 'scene-writer', icon: Film, label: 'Scene Writer' },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = mounted && activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id as TabType);
+                    if (typeof window !== 'undefined') {
+                      window.localStorage.setItem('activeTab', tab.id as string);
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all text-sm ${
+                    isActive
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
+
+        {/* Chat History Section */}
+        <div className="flex-1 px-3 py-2 overflow-y-auto">
+          <div className="mb-3">
+            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              Chats
+            </h3>
+            <div className="space-y-3">
+              {/* Scriptwriter Sessions */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1 px-1">Scriptwriter</div>
+                <div className="space-y-1">
+                  {loadingSessions && (
+                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Loading…</div>
+                  )}
+                  {!loadingSessions && scriptwriterSessions.length === 0 && (
+                    <div className="px-3 py-2 text-xs text-gray-400">No recent chats</div>
+                  )}
+                  {scriptwriterSessions.map((s) => (
+                    <button
+                      key={`sw-${s.session_id}`}
+                      onClick={() => openScriptwriterSession(s.session_id)}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <div className="truncate">{s.preview || s.session_id}</div>
+                      {s.last_activity && (
+                        <div className="text-[10px] text-gray-400">{new Date(s.last_activity).toLocaleString()}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Scene Writer Sessions */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1 px-1">Scene Writer</div>
+                <div className="space-y-1">
+                  {loadingSessions && (
+                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Loading…</div>
+                  )}
+                  {!loadingSessions && sceneWriterSessions.length === 0 && (
+                    <div className="px-3 py-2 text-xs text-gray-400">No recent chats</div>
+                  )}
+                  {sceneWriterSessions.map((s) => (
+                    <button
+                      key={`sc-${s.session_id}`}
+                      onClick={() => openSceneWriterSession(s.session_id)}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <div className="truncate">{s.preview || s.session_id}</div>
+                      {s.last_activity && (
+                        <div className="text-[10px] text-gray-400">{new Date(s.last_activity).toLocaleString()}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+              <span className="text-xs font-medium">U</span>
+            </div>
+            <span className="flex-1 truncate">User</span>
+          </div>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -1445,109 +1436,235 @@ export default function AnalyticsDashboard() {
 
               {/* Scriptwriter Chat Tab */}
               {activeTab === 'scriptwriter' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold">💬 Scriptwriter Chat</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Chat naturally to brainstorm, ask tips, or request a full script. The assistant remembers context in this session.
-                  </p>
-
-                  {selectedChannel && (
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                <div className="h-full flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scriptwriter</h1>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        AI-powered YouTube script generation
+                      </p>
+                    </div>
+                    {selectedChannel && (
                       <div className="flex items-center gap-3">
-                        <img src={selectedChannel.thumbnail} alt={selectedChannel.channel_title} className="w-12 h-12 rounded-full" />
-                        <div className="flex-1">
-                          <p className="font-semibold">Using analytics from {selectedChannel.channel_title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Session: {scriptwriterSessionId ? scriptwriterSessionId : 'New session'}</p>
-                        </div>
-                        <button onClick={clearScriptwriterChat} className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                          Clear Chat
+                        <img src={selectedChannel.thumbnail} alt={selectedChannel.channel_title} className="w-8 h-8 rounded-full" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{selectedChannel.channel_title}</span>
+                        <button 
+                          onClick={clearScriptwriterChat} 
+                          className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          Clear
                         </button>
                       </div>
-                    </div>
-                  )}
-
-                  <div className="h-[480px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
-                    {scriptwriterMessages.length === 0 && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Start the conversation by asking for tips or say "Write a script about ..."</p>
                     )}
-                    {scriptwriterMessages.map((m, idx) => (
-                      <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
-                        <div className={(m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100') + ' inline-block px-3 py-2 rounded-lg max-w-[80%] whitespace-pre-wrap'}>
-                          {m.content}
-                        </div>
-                      </div>
-                    ))}
                   </div>
 
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={scriptwriterInput}
-                      onChange={(e) => setScriptwriterInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendScriptwriterMessage(); } }}
-                      placeholder="Type your message..."
-                      className="flex-1 px-4 py-3 border rounded-lg dark:bg-gray-700"
-                    />
-                    <button
-                      onClick={sendScriptwriterMessage}
-                      disabled={loading}
-                      className="px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold disabled:opacity-50"
-                    >
-                      {loading ? '⏳' : 'Send'}
-                    </button>
+                  {/* Chat Messages */}
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="max-w-4xl mx-auto space-y-6">
+                      {scriptwriterMessages.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                            <span className="text-2xl">✍️</span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Start Writing</h3>
+                          <p className="text-gray-500 dark:text-gray-400 mb-4">Ask for tips or say "Write a script about..."</p>
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            <button 
+                              onClick={() => {
+                                setScriptwriterInput("Write a script about AI technology");
+                                sendScriptwriterMessage();
+                              }}
+                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                              AI Script
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setScriptwriterInput("How do I create engaging video hooks?");
+                                sendScriptwriterMessage();
+                              }}
+                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                              Hook Tips
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {scriptwriterMessages.map((m, idx) => (
+                        <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] ${
+                            m.role === 'user' 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+                          } rounded-2xl px-4 py-3 shadow-sm`}>
+                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                              {m.content}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 p-6">
+                    <div className="max-w-4xl mx-auto">
+                      <div className="relative">
+                        <div className="flex items-end gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
+                          <div className="flex-1">
+                            <textarea
+                              value={scriptwriterInput}
+                              onChange={(e) => setScriptwriterInput(e.target.value)}
+                              onKeyDown={(e) => { 
+                                if (e.key === 'Enter' && !e.shiftKey) { 
+                                  e.preventDefault(); 
+                                  sendScriptwriterMessage(); 
+                                } 
+                              }}
+                              placeholder="Ask anything about scriptwriting..."
+                              rows={1}
+                              className="w-full resize-none border-0 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm leading-relaxed"
+                              style={{ minHeight: '24px', maxHeight: '120px' }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                              <span className="text-lg">📎</span>
+                            </button>
+                            <button
+                              onClick={sendScriptwriterMessage}
+                              disabled={loading || !scriptwriterInput.trim()}
+                              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {loading ? (
+                                <span className="animate-spin text-sm">⏳</span>
+                              ) : (
+                                <span className="text-sm">➤</span>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Scene Writer Chat Tab */}
               {activeTab === 'scene-writer' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold">🎬 Scene Writer Chat</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Discuss cinematography or ask to convert scripts into detailed scenes. The assistant remembers session context.
-                  </p>
-
-                  <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border-2 border-purple-300 dark:border-purple-700">
+                <div className="h-full flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scene Writer</h1>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Convert scripts to cinematic scenes
+                      </p>
+                    </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <p className="font-semibold">Session: {sceneWriterSessionId ? sceneWriterSessionId : 'New session'}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Optionally paste script context in chat to convert to scenes</p>
-                      </div>
-                      <button onClick={clearSceneWriterChat} className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                        Clear Chat
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Session: {sceneWriterSessionId ? 'Active' : 'New'}
+                      </span>
+                      <button 
+                        onClick={clearSceneWriterChat} 
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Clear
                       </button>
                     </div>
                   </div>
 
-                  <div className="h-[480px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
-                    {sceneWriterMessages.length === 0 && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Ask to "Convert to scenes" or discuss shot types, angles, lighting, etc.</p>
-                    )}
-                    {sceneWriterMessages.map((m, idx) => (
-                      <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
-                        <div className={(m.role === 'user' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100') + ' inline-block px-3 py-2 rounded-lg max-w-[80%] whitespace-pre-wrap'}>
-                          {m.content}
+                  {/* Chat Messages */}
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="max-w-4xl mx-auto space-y-6">
+                      {sceneWriterMessages.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                            <span className="text-2xl">🎬</span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Start Creating</h3>
+                          <p className="text-gray-500 dark:text-gray-400 mb-4">Ask about cinematography or convert scripts to scenes</p>
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            <button 
+                              onClick={() => {
+                                setSceneWriterInput("Explain different camera shot types");
+                                sendSceneWriterMessage();
+                              }}
+                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                              Shot Types
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSceneWriterInput("Convert to scenes: A tech reviewer unboxes the latest smartphone");
+                                sendSceneWriterMessage();
+                              }}
+                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                              Scene Example
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )}
+                      
+                      {sceneWriterMessages.map((m, idx) => (
+                        <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] ${
+                            m.role === 'user' 
+                              ? 'bg-purple-600 text-white' 
+                              : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+                          } rounded-2xl px-4 py-3 shadow-sm`}>
+                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                              {m.content}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={sceneWriterInput}
-                      onChange={(e) => setSceneWriterInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendSceneWriterMessage(); } }}
-                      placeholder="Type your message or paste script context..."
-                      className="flex-1 px-4 py-3 border rounded-lg dark:bg-gray-700"
-                    />
-                    <button
-                      onClick={sendSceneWriterMessage}
-                      disabled={loading}
-                      className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold disabled:opacity-50"
-                    >
-                      {loading ? '⏳' : 'Send'}
-                    </button>
+                  {/* Input Area */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 p-6">
+                    <div className="max-w-4xl mx-auto">
+                      <div className="relative">
+                        <div className="flex items-end gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
+                          <div className="flex-1">
+                            <textarea
+                              value={sceneWriterInput}
+                              onChange={(e) => setSceneWriterInput(e.target.value)}
+                              onKeyDown={(e) => { 
+                                if (e.key === 'Enter' && !e.shiftKey) { 
+                                  e.preventDefault(); 
+                                  sendSceneWriterMessage(); 
+                                } 
+                              }}
+                              placeholder="Ask about cinematography or paste script to convert..."
+                              rows={1}
+                              className="w-full resize-none border-0 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm leading-relaxed"
+                              style={{ minHeight: '24px', maxHeight: '120px' }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                              <span className="text-lg">🎥</span>
+                            </button>
+                            <button
+                              onClick={sendSceneWriterMessage}
+                              disabled={loading || !sceneWriterInput.trim()}
+                              className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {loading ? (
+                                <span className="animate-spin text-sm">⏳</span>
+                              ) : (
+                                <span className="text-sm">➤</span>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
