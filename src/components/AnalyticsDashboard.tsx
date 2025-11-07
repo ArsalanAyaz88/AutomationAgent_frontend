@@ -29,6 +29,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     : 'http://localhost:8000');
 
 type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap' | 'scriptwriter' | 'scene-writer';
+type AgentType = 'scriptwriter' | 'scene-writer';
+type ChatSession = { id: string; agent: AgentType; title: string; updatedAt: string };
 
 export default function AnalyticsDashboard() {
   const router = useRouter();
@@ -48,10 +50,32 @@ export default function AnalyticsDashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<AgentType>('scriptwriter');
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load chat sessions from localStorage
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('chat_sessions_v1') : null;
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatSession[];
+        setChatSessions(parsed);
+      }
+    } catch {}
+  }, []);
+
+  const persistSessions = (sessions: ChatSession[]) => {
+    setChatSessions(sessions);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('chat_sessions_v1', JSON.stringify(sessions));
+    }
+  };
+
+  const genSessionId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   
   // Analytics state
   const [analyticsStatus, setAnalyticsStatus] = useState<AnalyticsStatus | null>(null);
@@ -488,6 +512,9 @@ export default function AnalyticsDashboard() {
     
     const userMessage = scriptwriterInput.trim();
     setScriptwriterInput('');
+    // Ensure we have a session id for persistence
+    let sid = scriptwriterSessionId || genSessionId();
+    if (!scriptwriterSessionId) setScriptwriterSessionId(sid);
     
     // Add user message to UI
     setScriptwriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -500,7 +527,7 @@ export default function AnalyticsDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          session_id: scriptwriterSessionId,
+          session_id: sid,
           user_id: 'default',
           channel_id: selectedChannel?.channel_id
         })
@@ -511,11 +538,19 @@ export default function AnalyticsDashboard() {
       if (data.success) {
         // Add assistant response to UI
         setScriptwriterMessages(prev => [...prev, { role: 'assistant', content: data.result }]);
-        
-        // Store session_id if first message
-        if (!scriptwriterSessionId && data.session_id) {
-          setScriptwriterSessionId(data.session_id);
-        }
+        // Save/update session directory
+        try {
+          const title = userMessage.slice(0, 40);
+          const now = new Date().toISOString();
+          const updated = [...chatSessions];
+          const idx = updated.findIndex(s => s.id === sid);
+          if (idx >= 0) {
+            updated[idx] = { ...updated[idx], title, updatedAt: now };
+          } else {
+            updated.unshift({ id: sid, agent: 'scriptwriter', title, updatedAt: now });
+          }
+          persistSessions(updated.slice(0, 50));
+        } catch {}
       } else {
         setError(data.error || 'Chat failed');
       }
@@ -551,6 +586,8 @@ export default function AnalyticsDashboard() {
     
     const userMessage = sceneWriterInput.trim();
     setSceneWriterInput('');
+    let sid = sceneWriterSessionId || genSessionId();
+    if (!sceneWriterSessionId) setSceneWriterSessionId(sid);
     
     // Add user message to UI
     setSceneWriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -563,7 +600,7 @@ export default function AnalyticsDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          session_id: sceneWriterSessionId,
+          session_id: sid,
           user_id: 'default',
           script_context: null
         })
@@ -574,11 +611,19 @@ export default function AnalyticsDashboard() {
       if (data.success) {
         // Add assistant response to UI
         setSceneWriterMessages(prev => [...prev, { role: 'assistant', content: data.result }]);
-        
-        // Store session_id if first message
-        if (!sceneWriterSessionId && data.session_id) {
-          setSceneWriterSessionId(data.session_id);
-        }
+        // Save/update session directory
+        try {
+          const title = userMessage.slice(0, 40);
+          const now = new Date().toISOString();
+          const updated = [...chatSessions];
+          const idx = updated.findIndex(s => s.id === sid);
+          if (idx >= 0) {
+            updated[idx] = { ...updated[idx], title, updatedAt: now };
+          } else {
+            updated.unshift({ id: sid, agent: 'scene-writer', title, updatedAt: now });
+          }
+          persistSessions(updated.slice(0, 50));
+        } catch {}
       } else {
         setError(data.error || 'Chat failed');
       }
@@ -586,6 +631,50 @@ export default function AnalyticsDashboard() {
       setError(err.message || 'Failed to send message');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // New Chat action
+  const handleNewChat = () => {
+    if (selectedAgent === 'scriptwriter') {
+      setScriptwriterMessages([]);
+      setScriptwriterSessionId(null);
+      setActiveTab('scriptwriter');
+    } else {
+      setSceneWriterMessages([]);
+      setSceneWriterSessionId(null);
+      setActiveTab('scene-writer');
+    }
+  };
+
+  // Open a saved session
+  const openSession = async (s: ChatSession) => {
+    try {
+      if (s.agent === 'scriptwriter') {
+        setActiveTab('scriptwriter');
+        setScriptwriterSessionId(s.id);
+        const r = await fetch(`${API_BASE_URL}/api/unified/get-scriptwriter-chat/${s.id}?user_id=default`);
+        const d = await r.json();
+        if (d.success && Array.isArray(d.messages)) {
+          const msgs = d.messages.map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+          setScriptwriterMessages(msgs);
+        } else {
+          setScriptwriterMessages([]);
+        }
+      } else {
+        setActiveTab('scene-writer');
+        setSceneWriterSessionId(s.id);
+        const r = await fetch(`${API_BASE_URL}/api/unified/get-scene-writer-chat/${s.id}?user_id=default`);
+        const d = await r.json();
+        if (d.success && Array.isArray(d.messages)) {
+          const msgs = d.messages.map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+          setSceneWriterMessages(msgs);
+        } else {
+          setSceneWriterMessages([]);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to open session', e);
     }
   };
   
@@ -620,6 +709,52 @@ export default function AnalyticsDashboard() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Analytics Dashboard
           </p>
+        </div>
+
+        {/* Agents + New Chat + History */}
+        <div className="p-4 space-y-3 border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={handleNewChat}
+            className="w-full flex items-center justify-between gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+            title="New Chat"
+          >
+            <span className="font-semibold">New Chat</span>
+            <span className="text-xs opacity-70">Ctrl K</span>
+          </button>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Agents</label>
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value as AgentType)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700"
+            >
+              <option value="scriptwriter">Scriptwriter</option>
+              <option value="scene-writer">Scene Writer</option>
+            </select>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
+              <span>Chat History</span>
+            </div>
+            <div className="space-y-1 max-h-56 overflow-auto pr-1">
+              {chatSessions.length === 0 && (
+                <div className="text-xs text-gray-400">Log in to sync chat history</div>
+              )}
+              {chatSessions.map((s) => (
+                <button
+                  key={`${s.agent}-${s.id}`}
+                  onClick={() => openSession(s)}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent"
+                  title={s.title}
+                >
+                  <div className="text-xs uppercase tracking-wide text-gray-400">{s.agent === 'scriptwriter' ? 'Scriptwriter' : 'Scene Writer'}</div>
+                  <div className="text-sm truncate text-gray-800 dark:text-gray-100">{s.title || 'Untitled'}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}
