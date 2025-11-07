@@ -1496,9 +1496,17 @@ export default function AnalyticsDashboard() {
                               ? 'bg-blue-500 text-white' 
                               : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
                           } rounded-2xl px-4 py-3 shadow-sm`}>
-                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                              {m.content}
-                            </div>
+                            {m.role === 'assistant' ? (
+                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {m.content}
+                                </ReactMarkdown>
+                              </div>
+                            ) : (
+                              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                {m.content}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1613,9 +1621,17 @@ export default function AnalyticsDashboard() {
                               ? 'bg-purple-600 text-white' 
                               : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
                           } rounded-2xl px-4 py-3 shadow-sm`}>
-                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                              {m.content}
-                            </div>
+                            {m.role === 'assistant' ? (
+                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {m.content}
+                                </ReactMarkdown>
+                              </div>
+                            ) : (
+                              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                {m.content}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
