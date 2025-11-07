@@ -632,11 +632,12 @@ export default function AnalyticsDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium ${
+                aria-current={isActive ? 'page' : undefined}
+                className={
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+                    ? 'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                    : 'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 bg-transparent'
+                }
               >
                 <Icon className="w-5 h-5" />
                 <span>{tab.label}</span>
@@ -650,7 +651,7 @@ export default function AnalyticsDashboard() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto p-6 space-y-6">
 
-          <div className="flex items-center justify-between">
+          {/* <div className="flex items-center justify-between">
             <button
               onClick={() => router.push('/agents')}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -658,7 +659,7 @@ export default function AnalyticsDashboard() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm font-medium">Back to Agents</span>
             </button>
-          </div>
+          </div> */}
         {/* Track Channel Section */}
         {!analyticsStatus?.has_analytics && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
