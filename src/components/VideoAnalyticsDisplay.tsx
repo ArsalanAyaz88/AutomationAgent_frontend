@@ -41,8 +41,11 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
   return (
     <div className="mt-6 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div 
-        className="flex items-center justify-between p-6 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800 transition-colors rounded-t-xl"
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        aria-expanded={isExpanded}
+        className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800 transition-colors rounded-t-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
       >
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-md">
@@ -57,10 +60,10 @@ export default function VideoAnalyticsDisplay({ videoAnalytics, channelTitle }: 
             </p>
           </div>
         </div>
-        <button className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <span className="text-lg">{isExpanded ? '▼' : '▶'}</span>
-        </button>
-      </div>
+        <span className="text-lg text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+          {isExpanded ? '▼' : '▶'}
+        </span>
+      </button>
 
       {/* Content */}
       {isExpanded && (
