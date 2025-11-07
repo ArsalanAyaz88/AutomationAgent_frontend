@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
-import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft } from 'lucide-react';
+import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft, MessageSquare, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import VideoAnalyticsDisplay from '@/components/VideoAnalyticsDisplay';
 import {
@@ -28,7 +28,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://automation-agent-backend.vercel.app' 
     : 'http://localhost:8000');
 
-type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap';
+type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap' | 'scriptwriter' | 'scene-writer';
 
 export default function AnalyticsDashboard() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function AnalyticsDashboard() {
     if (typeof window !== 'undefined') {
       // Restore saved tab from localStorage, default to 'channels' for first visit
       const savedTab = window.localStorage.getItem('activeTab');
-      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'roadmap'].includes(savedTab)) {
+      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'roadmap', 'scriptwriter', 'scene-writer'].includes(savedTab)) {
         return savedTab as TabType;
       }
     }
@@ -630,6 +630,8 @@ export default function AnalyticsDashboard() {
             { id: 'ideas', icon: Lightbulb, label: 'Video Ideas' },
             { id: 'titles', icon: Hash, label: 'Title Generator' },
             { id: 'roadmap', icon: Map, label: 'Content Roadmap' },
+            { id: 'scriptwriter', icon: MessageSquare, label: 'Scriptwriter Chat' },
+            { id: 'scene-writer', icon: Film, label: 'Scene Writer' },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = mounted && activeTab === tab.id;
@@ -1303,6 +1305,115 @@ export default function AnalyticsDashboard() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Scriptwriter Chat Tab */}
+              {activeTab === 'scriptwriter' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold">💬 Scriptwriter Chat</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Chat naturally to brainstorm, ask tips, or request a full script. The assistant remembers context in this session.
+                  </p>
+
+                  {selectedChannel && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border-2 border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-3">
+                        <img src={selectedChannel.thumbnail} alt={selectedChannel.channel_title} className="w-12 h-12 rounded-full" />
+                        <div className="flex-1">
+                          <p className="font-semibold">Using analytics from {selectedChannel.channel_title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Session: {scriptwriterSessionId ? scriptwriterSessionId : 'New session'}</p>
+                        </div>
+                        <button onClick={clearScriptwriterChat} className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                          Clear Chat
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="h-[480px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+                    {scriptwriterMessages.length === 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Start the conversation by asking for tips or say "Write a script about ..."</p>
+                    )}
+                    {scriptwriterMessages.map((m, idx) => (
+                      <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+                        <div className={(m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100') + ' inline-block px-3 py-2 rounded-lg max-w-[80%] whitespace-pre-wrap'}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={scriptwriterInput}
+                      onChange={(e) => setScriptwriterInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendScriptwriterMessage(); } }}
+                      placeholder="Type your message..."
+                      className="flex-1 px-4 py-3 border rounded-lg dark:bg-gray-700"
+                    />
+                    <button
+                      onClick={sendScriptwriterMessage}
+                      disabled={loading}
+                      className="px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold disabled:opacity-50"
+                    >
+                      {loading ? '⏳' : 'Send'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Scene Writer Chat Tab */}
+              {activeTab === 'scene-writer' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold">🎬 Scene Writer Chat</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Discuss cinematography or ask to convert scripts into detailed scenes. The assistant remembers session context.
+                  </p>
+
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border-2 border-purple-300 dark:border-purple-700">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="font-semibold">Session: {sceneWriterSessionId ? sceneWriterSessionId : 'New session'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Optionally paste script context in chat to convert to scenes</p>
+                      </div>
+                      <button onClick={clearSceneWriterChat} className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        Clear Chat
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-[480px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+                    {sceneWriterMessages.length === 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Ask to "Convert to scenes" or discuss shot types, angles, lighting, etc.</p>
+                    )}
+                    {sceneWriterMessages.map((m, idx) => (
+                      <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+                        <div className={(m.role === 'user' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100') + ' inline-block px-3 py-2 rounded-lg max-w-[80%] whitespace-pre-wrap'}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={sceneWriterInput}
+                      onChange={(e) => setSceneWriterInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendSceneWriterMessage(); } }}
+                      placeholder="Type your message or paste script context..."
+                      className="flex-1 px-4 py-3 border rounded-lg dark:bg-gray-700"
+                    />
+                    <button
+                      onClick={sendSceneWriterMessage}
+                      disabled={loading}
+                      className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold disabled:opacity-50"
+                    >
+                      {loading ? '⏳' : 'Send'}
+                    </button>
+                  </div>
                 </div>
               )}
 
