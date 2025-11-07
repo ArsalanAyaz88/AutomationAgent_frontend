@@ -1464,6 +1464,14 @@ export default function AnalyticsDashboard() {
                         AI-powered YouTube script generation
                       </p>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={clearScriptwriterChat} 
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
                   </div>
 
                   {/* Chat Messages */}
@@ -1577,6 +1585,17 @@ export default function AnalyticsDashboard() {
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         Convert scripts to cinematic scenes
                       </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Session: {sceneWriterSessionId ? 'Active' : 'New'}
+                      </span>
+                      <button 
+                        onClick={clearSceneWriterChat} 
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
 
