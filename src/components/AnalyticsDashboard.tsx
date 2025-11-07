@@ -608,8 +608,7 @@ export default function AnalyticsDashboard() {
         body: JSON.stringify({
           message: userMessage,
           session_id: scriptwriterSessionId,
-          user_id: 'default',
-          channel_id: selectedChannel?.channel_id
+          user_id: 'default'
         })
       });
       
@@ -1475,18 +1474,14 @@ export default function AnalyticsDashboard() {
                         AI-powered YouTube script generation
                       </p>
                     </div>
-                    {selectedChannel && (
-                      <div className="flex items-center gap-3">
-                        <img src={selectedChannel.thumbnail} alt={selectedChannel.channel_title} className="w-8 h-8 rounded-full" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{selectedChannel.channel_title}</span>
-                        <button 
-                          onClick={clearScriptwriterChat} 
-                          className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={clearScriptwriterChat} 
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
                   </div>
 
                   {/* Chat Messages */}
