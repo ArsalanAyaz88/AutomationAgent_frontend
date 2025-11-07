@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
-import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft, MessageSquare, Film } from 'lucide-react';
+import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft, MessageSquare, Film, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import VideoAnalyticsDisplay from '@/components/VideoAnalyticsDisplay';
 import {
@@ -231,6 +231,32 @@ export default function AnalyticsDashboard() {
   const openSession = async (agent: 'scriptwriter' | 'scene-writer', sessionId: string) => {
     if (agent === 'scriptwriter') return openScriptwriterSession(sessionId);
     return openSceneWriterSession(sessionId);
+  };
+
+  // Delete a chat session (both frontend state and backend)
+  const deleteChatSession = async (agent: 'scriptwriter' | 'scene-writer', sessionId: string) => {
+    try {
+      const confirmed = typeof window !== 'undefined' ? window.confirm('Delete this chat permanently?') : true;
+      if (!confirmed) return;
+      const url = agent === 'scriptwriter'
+        ? `${API_BASE_URL}/api/unified/clear-scriptwriter-chat/${sessionId}?user_id=default`
+        : `${API_BASE_URL}/api/unified/clear-scene-writer-chat/${sessionId}?user_id=default`;
+      await fetch(url, { method: 'DELETE' });
+      // Clear currently open chat if it matches
+      if (agent === 'scriptwriter' && scriptwriterSessionId === sessionId) {
+        setScriptwriterMessages([]);
+        setScriptwriterSessionId(null);
+      }
+      if (agent === 'scene-writer' && sceneWriterSessionId === sessionId) {
+        setSceneWriterMessages([]);
+        setSceneWriterSessionId(null);
+      }
+      await loadChatSessions();
+      setSuccess('✅ Chat deleted');
+      setTimeout(() => setSuccess(''), 2000);
+    } catch (e) {
+      setError('Failed to delete chat');
+    }
   };
 
   // Copy to clipboard function
@@ -775,6 +801,13 @@ export default function AnalyticsDashboard() {
                           <div className="text-[10px] text-gray-400">{new Date(s.last_activity).toLocaleString()}</div>
                         )}
                       </div>
+                      <span
+                        title="Delete chat"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteChatSession(s.agent, s.session_id); }}
+                        className="ml-auto p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </span>
                     </div>
                   </button>
                 );
