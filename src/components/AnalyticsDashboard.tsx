@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
@@ -110,6 +110,19 @@ export default function AnalyticsDashboard() {
   const [sceneWriterSessions, setSceneWriterSessions] = useState<ChatSession[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
 
+  type CombinedSession = { session_id: string; agent: 'scriptwriter' | 'scene-writer'; last_activity?: string; preview?: string };
+  const combinedSessions = useMemo<CombinedSession[]>(() => {
+    const sw = scriptwriterSessions.map(s => ({ session_id: s.session_id, agent: 'scriptwriter' as const, last_activity: s.last_activity, preview: s.preview }));
+    const sc = sceneWriterSessions.map(s => ({ session_id: s.session_id, agent: 'scene-writer' as const, last_activity: s.last_activity, preview: s.preview }));
+    const all = [...sw, ...sc];
+    all.sort((a, b) => {
+      const ta = a.last_activity ? new Date(a.last_activity).getTime() : 0;
+      const tb = b.last_activity ? new Date(b.last_activity).getTime() : 0;
+      return tb - ta;
+    });
+    return all;
+  }, [scriptwriterSessions, sceneWriterSessions]);
+
   // Strip markdown formatting to get clean plain text
   const stripMarkdown = (text: string): string => {
     let cleanText = text;
@@ -213,6 +226,11 @@ export default function AnalyticsDashboard() {
   const openSceneWriterSession = async (sessionId: string) => {
     setActiveTab('scene-writer');
     await fetchSceneWriterChat(sessionId);
+  };
+
+  const openSession = async (agent: 'scriptwriter' | 'scene-writer', sessionId: string) => {
+    if (agent === 'scriptwriter') return openScriptwriterSession(sessionId);
+    return openSceneWriterSession(sessionId);
   };
 
   // Copy to clipboard function
@@ -604,6 +622,7 @@ export default function AnalyticsDashboard() {
       setScriptwriterMessages([]);
       setScriptwriterSessionId(null);
       setSuccess('Chat cleared!');
+      loadChatSessions();
     } catch (err: any) {
       setError('Failed to clear chat');
     }
@@ -668,6 +687,7 @@ export default function AnalyticsDashboard() {
       setSceneWriterMessages([]);
       setSceneWriterSessionId(null);
       setSuccess('Chat cleared!');
+      loadChatSessions();
     } catch (err: any) {
       setError('Failed to clear chat');
     }
@@ -732,56 +752,33 @@ export default function AnalyticsDashboard() {
             <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               Chats
             </h3>
-            <div className="space-y-3">
-              {/* Scriptwriter Sessions */}
-              <div>
-                <div className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1 px-1">Scriptwriter</div>
-                <div className="space-y-1">
-                  {loadingSessions && (
-                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Loading…</div>
-                  )}
-                  {!loadingSessions && scriptwriterSessions.length === 0 && (
-                    <div className="px-3 py-2 text-xs text-gray-400">No recent chats</div>
-                  )}
-                  {scriptwriterSessions.map((s) => (
-                    <button
-                      key={`sw-${s.session_id}`}
-                      onClick={() => openScriptwriterSession(s.session_id)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      <div className="truncate">{s.preview || s.session_id}</div>
-                      {s.last_activity && (
-                        <div className="text-[10px] text-gray-400">{new Date(s.last_activity).toLocaleString()}</div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Scene Writer Sessions */}
-              <div>
-                <div className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1 px-1">Scene Writer</div>
-                <div className="space-y-1">
-                  {loadingSessions && (
-                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Loading…</div>
-                  )}
-                  {!loadingSessions && sceneWriterSessions.length === 0 && (
-                    <div className="px-3 py-2 text-xs text-gray-400">No recent chats</div>
-                  )}
-                  {sceneWriterSessions.map((s) => (
-                    <button
-                      key={`sc-${s.session_id}`}
-                      onClick={() => openSceneWriterSession(s.session_id)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      <div className="truncate">{s.preview || s.session_id}</div>
-                      {s.last_activity && (
-                        <div className="text-[10px] text-gray-400">{new Date(s.last_activity).toLocaleString()}</div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-1">
+              {loadingSessions && (
+                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Loading…</div>
+              )}
+              {!loadingSessions && combinedSessions.length === 0 && (
+                <div className="px-3 py-2 text-xs text-gray-400">No recent chats</div>
+              )}
+              {combinedSessions.map((s) => {
+                const Icon = s.agent === 'scriptwriter' ? MessageSquare : Film;
+                return (
+                  <button
+                    key={`${s.agent}-${s.session_id}`}
+                    onClick={() => openSession(s.agent, s.session_id)}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                      <div className="min-w-0">
+                        <div className="truncate">{s.preview || s.session_id}</div>
+                        {s.last_activity && (
+                          <div className="text-[10px] text-gray-400">{new Date(s.last_activity).toLocaleString()}</div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
