@@ -1599,7 +1599,17 @@ export default function AnalyticsDashboard() {
                           <div className="flex-1">
                             <textarea
                               value={scriptwriterInput}
-                              onChange={(e) => setScriptwriterInput(e.target.value)}
+                              rows={1}
+                              onChange={(e) => {
+                                setScriptwriterInput(e.target.value);
+                                e.currentTarget.style.height = 'auto';
+                                e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 200) + 'px';
+                              }}
+                              onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
+                                const el = e.currentTarget;
+                                el.style.height = 'auto';
+                                el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                              }}
                               onKeyDown={(e) => { 
                                 if (e.key === 'Enter' && !e.shiftKey) { 
                                   e.preventDefault(); 
@@ -1607,9 +1617,8 @@ export default function AnalyticsDashboard() {
                                 } 
                               }}
                               placeholder="Ask anything about scriptwriting..."
-                              rows={1}
-                              className="w-full resize-none border-0 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm leading-relaxed"
-                              style={{ minHeight: '24px', maxHeight: '120px' }}
+                              className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none overflow-hidden leading-6 max-h-48"
+                              style={{ minHeight: '44px' }}
                             />
                           </div>
                           <div className="flex items-center gap-2">
@@ -1724,7 +1733,17 @@ export default function AnalyticsDashboard() {
                           <div className="flex-1">
                             <textarea
                               value={sceneWriterInput}
-                              onChange={(e) => setSceneWriterInput(e.target.value)}
+                              rows={1}
+                              onChange={(e) => {
+                                setSceneWriterInput(e.target.value);
+                                e.currentTarget.style.height = 'auto';
+                                e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 200) + 'px';
+                              }}
+                              onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
+                                const el = e.currentTarget;
+                                el.style.height = 'auto';
+                                el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                              }}
                               onKeyDown={(e) => { 
                                 if (e.key === 'Enter' && !e.shiftKey) { 
                                   e.preventDefault(); 
@@ -1732,9 +1751,8 @@ export default function AnalyticsDashboard() {
                                 } 
                               }}
                               placeholder="Ask about cinematography or paste script to convert..."
-                              rows={1}
-                              className="w-full resize-none border-0 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm leading-relaxed"
-                              style={{ minHeight: '24px', maxHeight: '120px' }}
+                              className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none overflow-hidden leading-6 max-h-48"
+                              style={{ minHeight: '44px' }}
                             />
                           </div>
                           <div className="flex items-center gap-2">
