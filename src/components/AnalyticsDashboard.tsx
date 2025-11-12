@@ -174,6 +174,63 @@ export default function AnalyticsDashboard() {
     return cleanText.trim();
   };
 
+  const streamAgentRun = async (
+    body: { agent_key: string; prompt: string; agent_name?: string; instructions?: string },
+    onDelta: (text: string) => void,
+    onStart?: () => void,
+    onEnd?: () => void,
+    onError?: (err: string) => void
+  ) => {
+    const res = await fetch(`${API_BASE_URL}/api/stream/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok || !res.body) {
+      const msg = `HTTP ${res.status}`;
+      onError?.(msg);
+      throw new Error(msg);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buf = '';
+
+    onStart?.();
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split('\n\n');
+        buf = parts.pop() || '';
+        for (const chunk of parts) {
+          const lines = chunk.split('\n');
+          let eventType: string | null = null;
+          let data = '';
+          for (const line of lines) {
+            if (line.startsWith('event:')) eventType = line.slice(6).trim();
+            else if (line.startsWith('data:')) data += line.slice(5);
+          }
+          if (eventType === 'error') {
+            onError?.(data);
+          } else if (eventType === 'start') {
+            // no-op
+          } else if (eventType === 'end') {
+            onEnd?.();
+          } else {
+            onDelta(data);
+          }
+        }
+      }
+    } finally {
+      onEnd?.();
+      reader.releaseLock();
+    }
+  };
+
   const loadChatSessions = async () => {
     try {
       setLoadingSessions(true);
@@ -600,35 +657,37 @@ export default function AnalyticsDashboard() {
     setScriptwriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
     setError('');
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/unified/scriptwriter-chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          session_id: scriptwriterSessionId,
-          user_id: 'default'
-        })
+    setScriptwriterMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+    const onDelta = (delta: string) => {
+      setScriptwriterMessages(prev => {
+        const next = [...prev];
+        const idx = next.length - 1;
+        next[idx] = { role: 'assistant', content: next[idx].content + delta } as any;
+        return next;
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Add assistant response to UI
-        setScriptwriterMessages(prev => [...prev, { role: 'assistant', content: data.result }]);
-        
-        // Store session_id if first message
-        if (!scriptwriterSessionId && data.session_id) {
-          setScriptwriterSessionId(data.session_id);
-        }
-        loadChatSessions();
-      } else {
-        setError(data.error || 'Chat failed');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send message');
-    } finally {
+    };
+    const onEnd = () => {
+      setLoading(false);
+    };
+    const onError = (err: string) => {
+      setError(err || 'Stream error');
+      setLoading(false);
+    };
+    try {
+      await streamAgentRun(
+        {
+          agent_key: 'scriptwriter_chat',
+          prompt: userMessage,
+          agent_name: 'Scriptwriter Chatbot',
+          instructions: undefined,
+        },
+        onDelta,
+        undefined,
+        onEnd,
+        onError
+      );
+    } catch (e: any) {
+      setError(e?.message || 'Failed to stream');
       setLoading(false);
     }
   };
@@ -664,36 +723,37 @@ export default function AnalyticsDashboard() {
     setSceneWriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
     setError('');
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/unified/scene-writer-chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          session_id: sceneWriterSessionId,
-          user_id: 'default',
-          script_context: null
-        })
+    setSceneWriterMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+    const onDelta = (delta: string) => {
+      setSceneWriterMessages(prev => {
+        const next = [...prev];
+        const idx = next.length - 1;
+        next[idx] = { role: 'assistant', content: next[idx].content + delta } as any;
+        return next;
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Add assistant response to UI
-        setSceneWriterMessages(prev => [...prev, { role: 'assistant', content: data.result }]);
-        
-        // Store session_id if first message
-        if (!sceneWriterSessionId && data.session_id) {
-          setSceneWriterSessionId(data.session_id);
-        }
-        loadChatSessions();
-      } else {
-        setError(data.error || 'Chat failed');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send message');
-    } finally {
+    };
+    const onEnd = () => {
+      setLoading(false);
+    };
+    const onError = (err: string) => {
+      setError(err || 'Stream error');
+      setLoading(false);
+    };
+    try {
+      await streamAgentRun(
+        {
+          agent_key: 'scene_writer_chat',
+          prompt: userMessage,
+          agent_name: 'Scene Writer Chatbot',
+          instructions: undefined,
+        },
+        onDelta,
+        undefined,
+        onEnd,
+        onError
+      );
+    } catch (e: any) {
+      setError(e?.message || 'Failed to stream');
       setLoading(false);
     }
   };
