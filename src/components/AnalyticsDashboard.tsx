@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { jsPDF } from 'jspdf';
-import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft, MessageSquare, Film, Trash2 } from 'lucide-react';
+import { Copy, Download, Check, Tv, BarChart3, Lightbulb, Hash, Map, ArrowLeft, MessageSquare, Film, Trash2, Book } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import VideoAnalyticsDisplay from '@/components/VideoAnalyticsDisplay';
+import SelectModal from '@/components/SelectModal';
 import {
   trackChannel,
   getTrackedChannels,
@@ -28,7 +29,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://automation-agent-backend.vercel.app' 
     : 'http://localhost:8000');
 
-type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap' | 'scriptwriter' | 'scene-writer';
+type TabType = 'overview' | 'channels' | 'ideas' | 'titles' | 'roadmap' | 'scene-writer' | 'story-writer' | 'scriptwriter';
 
 export default function AnalyticsDashboard() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function AnalyticsDashboard() {
     if (typeof window !== 'undefined') {
       // Restore saved tab from localStorage, default to 'channels' for first visit
       const savedTab = window.localStorage.getItem('activeTab');
-      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'roadmap', 'scriptwriter', 'scene-writer'].includes(savedTab)) {
+      if (savedTab && ['overview', 'channels', 'ideas', 'titles', 'roadmap', 'scene-writer', 'story-writer', 'scriptwriter'].includes(savedTab)) {
         return savedTab as TabType;
       }
     }
@@ -63,6 +64,16 @@ export default function AnalyticsDashboard() {
   const [ideasResponse, setIdeasResponse] = useState<UnifiedResponse | null>(null);
   const [titlesResponse, setTitlesResponse] = useState<UnifiedResponse | null>(null);
   const [roadmapResponse, setRoadmapResponse] = useState<UnifiedResponse | null>(null);
+  // Story writer state
+  const [storyTopic, setStoryTopic] = useState('');
+  const [storyWords, setStoryWords] = useState(1000);
+  const [storyLanguage, setStoryLanguage] = useState('english');
+  const [storyPlan, setStoryPlan] = useState<string>('');
+  const [storyOutline, setStoryOutline] = useState<string>('');
+  const [finalStory, setFinalStory] = useState<string>('');
+  const [copiedStory, setCopiedStory] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState(false);
+  const [loadingStory, setLoadingStory] = useState(false);
   
   // Form inputs
   const [scriptTopic, setScriptTopic] = useState('');
@@ -104,6 +115,7 @@ export default function AnalyticsDashboard() {
   const [sceneWriterInput, setSceneWriterInput] = useState('');
   const [sceneWriterMessages, setSceneWriterMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [sceneWriterSessionId, setSceneWriterSessionId] = useState<string | null>(null);
+  const [sceneLoading, setSceneLoading] = useState(false);
 
   type ChatSession = { session_id: string; last_activity?: string; preview?: string };
   const [scriptwriterSessions, setScriptwriterSessions] = useState<ChatSession[]>([]);
@@ -172,6 +184,156 @@ export default function AnalyticsDashboard() {
     cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
     
     return cleanText.trim();
+  };
+
+  const formatJsonIfPossible = (text: string): string | null => {
+    try {
+      const raw = text.trim();
+      const firstBrace = raw.indexOf('{');
+      const lastBrace = raw.lastIndexOf('}');
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) return null;
+      const candidate = raw.slice(firstBrace, lastBrace + 1);
+      const parsed = JSON.parse(candidate);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return null;
+    }
+  };
+
+  const sceneWriterSystemInstructions = `You are a filmmaker converting a provided story or script into production-ready visual scenes suitable for Veo-style video generation.
+Follow these rules:
+- First read and understand the full story from beginning to end.
+- Break the story into a sequence of short cinematic scenes that, when played in order, retell the entire story.
+- Prefer roughly one important sentence, line, or beat of the story per scene.
+- Keep each scene focused on one clear visual moment that could be used as a Veo prompt.
+- Always keep content safe-for-work (no graphic violence, no sexual content).
+
+OUTPUT FORMAT (VERY IMPORTANT):
+- Respond with EXACTLY ONE valid JSON object and nothing else.
+- Do NOT use Markdown, headings, bullet points, or backticks.
+- The JSON must have this overall structure:
+  {
+    "project_metadata": {
+      "title": "Short, catchy title summarizing the story",
+      "total_scenes": <number of scenes>,
+      "resolution": "Ultra 8K",
+      "aspect_ratio": "16:9",
+      "global_modifiers": "Cinematic lighting, photorealistic, sharp focus, Unreal Engine 5 style, highly detailed textures, motion blur where appropriate"
+    },
+    "scenes": [
+      {
+        "scene_id": 1,
+        "category": "Intro",
+        "visual_prompt": "Ultra 8K wide shot ..."
+      }
+    ]
+  }
+
+project_metadata RULES:
+- title: Short title that matches the story.
+- total_scenes: The exact number of scene objects in the scenes array.
+- resolution: Always use a cinematic value like "Ultra 8K".
+- aspect_ratio: Typically "16:9".
+- global_modifiers: Comma-separated cinematic style modifiers (lighting, realism, engine, etc.).
+
+scenes ARRAY RULES:
+- Each item must include: scene_id (integer), category (string), visual_prompt (string).
+- scene_id must start at 1 and increase by 1 for each scene.
+- category is a short label like "Intro", "Escape Begins", "Conflict", "Mountain Road", "Climax", "Resolution".
+- visual_prompt is a single, vivid description of what Veo should show for that scene:
+  * Include camera angle or framing (wide shot, close up, top down, etc.).
+  * Describe key action and motion.
+  * Mention important characters and their positioning.
+  * Include environment, lighting, and mood.
+  * Use English for the visual_prompt even if the input story is in another language.
+
+FINAL CONSTRAINTS:
+- Output must be valid JSON that can be parsed with no extra text.
+- Do not include comments or trailing commas.
+- Do not add explanations before or after the JSON.`;
+
+  // -------- Story Writer helpers --------
+  const extractOutlineFromPlan = (plan: string): string => {
+    try {
+      const lines = plan.split(/\r?\n/);
+      const startIdx = lines.findIndex(l => l.trim().toLowerCase().startsWith('## outline'));
+      if (startIdx === -1) return '';
+      const rest = lines.slice(startIdx + 1);
+      const outlineLines: string[] = [];
+      for (const l of rest) {
+        if (l.trim().startsWith('## ')) break;
+        outlineLines.push(l);
+      }
+      return outlineLines.join('\n').trim();
+    } catch {
+      return '';
+    }
+  };
+
+  const handleGenerateStoryPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoadingPlan(true);
+    setError('');
+    setSuccess('');
+    setStoryPlan('');
+    setStoryOutline('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/unified/story/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: storyTopic,
+          total_words: storyWords,
+          language: storyLanguage,
+          channel_id: selectedChannel?.channel_id,
+          user_id: 'default',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to generate plan');
+      setStoryPlan(data.result || '');
+      const outline = extractOutlineFromPlan(data.result || '');
+      if (outline) setStoryOutline(outline);
+      setSuccess('✅ Story plan generated');
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate plan');
+    } finally {
+      setLoading(false);
+      setLoadingPlan(false);
+    }
+  };
+
+  const handleGenerateFullStory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoadingStory(true);
+    setError('');
+    setSuccess('');
+    setFinalStory('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/unified/story/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: storyTopic,
+          total_words: storyWords,
+          outline: storyOutline,
+          language: storyLanguage,
+          channel_id: selectedChannel?.channel_id,
+          user_id: 'default',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to generate story');
+      setFinalStory(data.result || '');
+      setSuccess('✅ Story generated');
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate story');
+    } finally {
+      setLoading(false);
+      setLoadingStory(false);
+    }
   };
 
   const streamAgentRun = async (
@@ -688,7 +850,7 @@ export default function AnalyticsDashboard() {
       );
     } catch (e: any) {
       setError(e?.message || 'Failed to stream');
-      setLoading(false);
+      setSceneLoading(false);
     }
   };
   
@@ -717,11 +879,12 @@ export default function AnalyticsDashboard() {
     if (!sceneWriterInput.trim()) return;
     
     const userMessage = sceneWriterInput.trim();
+    const convertPrompt = `Convert the following story or script into a JSON object with project_metadata and scenes as described in your system instructions. Return ONLY the JSON object and nothing else.\n\nSTORY:\n${userMessage}`;
     setSceneWriterInput('');
     
     // Add user message to UI
     setSceneWriterMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setLoading(true);
+    setSceneLoading(true);
     setError('');
     setSceneWriterMessages(prev => [...prev, { role: 'assistant', content: '' }]);
     const onDelta = (delta: string) => {
@@ -733,19 +896,19 @@ export default function AnalyticsDashboard() {
       });
     };
     const onEnd = () => {
-      setLoading(false);
+      setSceneLoading(false);
     };
     const onError = (err: string) => {
       setError(err || 'Stream error');
-      setLoading(false);
+      setSceneLoading(false);
     };
     try {
       await streamAgentRun(
         {
           agent_key: 'scene_writer_chat',
-          prompt: userMessage,
+          prompt: convertPrompt,
           agent_name: 'Scene Writer Chatbot',
-          instructions: undefined,
+          instructions: sceneWriterSystemInstructions,
         },
         onDelta,
         undefined,
@@ -803,8 +966,9 @@ export default function AnalyticsDashboard() {
               { id: 'ideas', icon: Lightbulb, label: 'Video Ideas' },
               { id: 'titles', icon: Hash, label: 'Title Generator' },
               { id: 'roadmap', icon: Map, label: 'Content Roadmap' },
-              { id: 'scriptwriter', icon: MessageSquare, label: 'Scriptwriter Chat' },
+              { id: 'story-writer', icon: Book, label: 'Story Writer' },
               { id: 'scene-writer', icon: Film, label: 'Scene Writer' },
+              
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = mounted && activeTab === tab.id;
@@ -1332,18 +1496,16 @@ export default function AnalyticsDashboard() {
                           className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Style</label>
-                        <select
-                          value={ideasStyle}
-                          onChange={(e) => setIdeasStyle(e.target.value)}
-                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
-                        >
-                          <option value="viral">Viral</option>
-                          <option value="educational">Educational</option>
-                          <option value="entertaining">Entertaining</option>
-                        </select>
-                      </div>
+                      <SelectModal
+                        label="Style"
+                        value={ideasStyle}
+                        onChange={setIdeasStyle}
+                        options={[
+                          { value: 'viral', label: 'Viral' },
+                          { value: 'educational', label: 'Educational' },
+                          { value: 'entertaining', label: 'Entertaining' },
+                        ]}
+                      />
                     </div>
 
                     <button
@@ -1513,6 +1675,160 @@ export default function AnalyticsDashboard() {
                 </div>
               )}
 
+              {/* Story Writer Tab */}
+              {activeTab === 'story-writer' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold">📖 Story Writer</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Provide topic and word count. First generate characters, their shapes, and an outline. Edit the outline, then generate the full story.
+                  </p>
+
+                  {/* Selected Channel Info (optional analytics influence) */}
+                  {selectedChannel && (
+                    <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg border-2 border-indigo-300 dark:border-indigo-700">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={selectedChannel.thumbnail}
+                          alt={selectedChannel.channel_title}
+                          className="w-16 h-16 rounded-full border-2 border-white dark:border-gray-800 shadow-lg"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-lg">{selectedChannel.channel_title}</h4>
+                            <span className="px-2 py-0.5 bg-indigo-500 text-white text-xs font-bold rounded-full">
+                              ✓ ACTIVE
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Story tone may align with this channel's style
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            👥 {selectedChannel.subscriber_count.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">subscribers</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 1: Inputs and Plan Generation */}
+                  <form onSubmit={handleGenerateStoryPlan} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium mb-2">Story Topic</label>
+                        <input
+                          type="text"
+                          value={storyTopic}
+                          onChange={(e) => setStoryTopic(e.target.value)}
+                          placeholder="e.g., In a school, a teacher and students studying anaconda discover a mysterious egg..."
+                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Total Words</label>
+                        <input
+                          type="number"
+                          value={storyWords}
+                          onChange={(e) => setStoryWords(Number(e.target.value))}
+                          min={300}
+                          max={5000}
+                          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <SelectModal
+                        label="Language"
+                        value={storyLanguage}
+                        onChange={setStoryLanguage}
+                        options={[
+                          { value: 'english', label: 'English' },
+                          { value: 'spanish', label: 'Spanish' },
+                          { value: 'russian', label: 'Russian' },
+                        ]}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loadingPlan || loadingStory || !storyTopic.trim()}
+                      className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50"
+                    >
+                      {loadingPlan ? '⏳ Generating...' : '🧭 Generate Characters & Outline'}
+                    </button>
+                  </form>
+
+                  {/* Plan Display */}
+                  {storyPlan && (
+                    <div className="mt-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <h3 className="font-semibold mb-2">Plan</h3>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {storyPlan}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Editable Outline */}
+                  <div className="space-y-2">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-sm flex flex-wrap gap-4">
+                      <div><span className="font-semibold">Topic:</span> {storyTopic || '-'}</div>
+                      <div><span className="font-semibold">Words:</span> {storyWords}</div>
+                      <div><span className="font-semibold">Language:</span> {storyLanguage}</div>
+                    </div>
+                    <label className="block text-sm font-medium">Edit Outline (optional)</label>
+                    <textarea
+                      rows={8}
+                      value={storyOutline}
+                      onChange={(e) => setStoryOutline(e.target.value)}
+                      placeholder={`1. ...\n2. ...\n3. ...`}
+                      className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleGenerateFullStory}
+                    disabled={loadingStory || loadingPlan || !storyOutline.trim() || !storyTopic.trim()}
+                    className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 disabled:opacity-50"
+                  >
+                    {loadingStory ? '⏳ Generating...' : '✍️ Write Full Story'}
+                  </button>
+
+                  {/* Final Story */}
+                  {finalStory && (
+                    <div className="mt-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold">Final Story</h3>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => copyToClipboard(finalStory, setCopiedStory)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          >
+                            {copiedStory ? <Check size={16} /> : <Copy size={16} />}
+                            {copiedStory ? 'Copied!' : 'Copy'}
+                          </button>
+                          <button
+                            onClick={() => downloadAsPDF(finalStory, `Story-${storyTopic || 'untitled'}`)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600"
+                          >
+                            <Download size={16} />
+                            Download PDF
+                          </button>
+                        </div>
+                      </div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                        {finalStory}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Scriptwriter Chat Tab */}
               {activeTab === 'scriptwriter' && (
                 <div className="h-full flex flex-col">
@@ -1591,8 +1907,18 @@ export default function AnalyticsDashboard() {
                     </div>
                   </div>
 
+                  {sceneLoading && (
+                    <div className="px-6">
+                      <div className="max-w-4xl mx-auto mb-2">
+                        <div className="w-full py-2 rounded-lg bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200 text-center text-sm font-medium">
+                          ⏳ Generating...
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Input Area */}
-                  <div className="pt-6">
+                  <div className="pt-4">
                     <div className="max-w-4xl mx-auto">
                       <div className="relative">
                         <div className="flex items-end gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
@@ -1709,11 +2035,23 @@ export default function AnalyticsDashboard() {
                               : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
                           } rounded-2xl px-4 py-3 shadow-sm`}>
                             {m.role === 'assistant' ? (
-                              <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                  {m.content}
-                                </ReactMarkdown>
-                              </div>
+                              (() => {
+                                const prettyJson = formatJsonIfPossible(m.content);
+                                if (prettyJson) {
+                                  return (
+                                    <pre className="text-xs md:text-sm bg-gray-900 text-green-200 rounded-lg p-3 overflow-auto max-h-[480px] whitespace-pre">
+                                      <code>{prettyJson}</code>
+                                    </pre>
+                                  );
+                                }
+                                return (
+                                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {m.content}
+                                    </ReactMarkdown>
+                                  </div>
+                                );
+                              })()
                             ) : (
                               <div className="whitespace-pre-wrap text-sm leading-relaxed">
                                 {m.content}
@@ -1733,38 +2071,25 @@ export default function AnalyticsDashboard() {
                           <div className="flex-1">
                             <textarea
                               value={sceneWriterInput}
-                              rows={1}
-                              onChange={(e) => {
-                                setSceneWriterInput(e.target.value);
-                                e.currentTarget.style.height = 'auto';
-                                e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 200) + 'px';
-                              }}
-                              onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
-                                const el = e.currentTarget;
-                                el.style.height = 'auto';
-                                el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-                              }}
+                              rows={6}
+                              onChange={(e) => setSceneWriterInput(e.target.value)}
                               onKeyDown={(e) => { 
                                 if (e.key === 'Enter' && !e.shiftKey) { 
                                   e.preventDefault(); 
                                   sendSceneWriterMessage(); 
                                 } 
                               }}
-                              placeholder="Ask about cinematography or paste script to convert..."
-                              className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none overflow-hidden leading-6 max-h-48"
-                              style={{ minHeight: '44px' }}
+                              placeholder="Paste script to convert or ask about cinematography..."
+                              className="w-full bg-transparent border-0 p-0 focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none h-32 overflow-y-auto leading-6"
                             />
                           </div>
                           <div className="flex items-center gap-2">
-                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                              <span className="text-lg">🎥</span>
-                            </button>
                             <button
                               onClick={sendSceneWriterMessage}
-                              disabled={loading || !sceneWriterInput.trim()}
+                              disabled={sceneLoading || !sceneWriterInput.trim()}
                               className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                              {loading ? (
+                              {sceneLoading ? (
                                 <span className="animate-spin text-sm">⏳</span>
                               ) : (
                                 <span className="text-sm">➤</span>

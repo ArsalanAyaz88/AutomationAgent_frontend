@@ -14,7 +14,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-military-dark text-military-green font-military antialiased">
-        <div className="scan-line" />
         {children}
       </body>
     </html>
